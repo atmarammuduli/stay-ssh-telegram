@@ -1,0 +1,8 @@
+venv/
+*.log
+.env
+.stayssh.pid
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
