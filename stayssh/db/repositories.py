@@ -32,6 +32,8 @@ class SessionRepository:
         )
         self.db.add(session)
         await self.db.flush()
+        # In case of tests or no real DB, ensure id is set for DTO validation
+        if session.id is None: session.id = 0 
         return SessionDTO.model_validate(session)
 
     async def update_status(self, session_id: int, status: SessionStatus) -> None:

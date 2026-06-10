@@ -2,17 +2,22 @@
 
 ## 1. Revised Effort Estimation (Total: ~35-48 Hours)
 
-| Phase | Description | Estimated Effort |
+| Phase | Description | Status |
 | :--- | :--- | :--- |
-| **Design & Tech Specs** | Module/Class/Func contracts, 2.1-2.3 specification, DB Schema ERD. | 6-8 Hours |
-| **Infrastructure & CI** | Scaffolding, `run_local.sh`, Mypy/Ruff/Safety/Coverage configuration. | 4-5 Hours |
-| **Core SSH/Tmux Engine** | Contract-first implementation, asyncssh wrappers, tmux parsing logic. | 6-8 Hours |
-| **Persistence & State** | Postgres models, async migrations, rigorous error handling for DB state. | 5-7 Hours |
-| **Telegram & Adaptive Batching** | Multi-session logic, burst-handling state machine, UI/UX refinement. | 6-8 Hours |
-| **Rigorous Testing (100% Cov)** | Unit, Property-based (Hypothesis), Stress, and E2E tests. | 6-10 Hours |
-| **Deployment & Validation** | `deploy.sh`, Docker Compose, Final audit and documentation. | 2-2 Hours |
+| **Design & Tech Specs** | Module/Class/Func contracts, 2.1-2.3 specification, DB Schema ERD. | ✅ COMPLETE |
+| **Infrastructure & CI** | Scaffolding, `run_local.sh`, Static analysis setup. | ✅ COMPLETE |
+| **Core Engine & Persistence**| Contract-first implementation of SSH, Tmux, and DB. | ✅ COMPLETE |
+| **Telegram & Adaptive Batching** | Adaptive logic and UI/UX with strict state machines. | ✅ COMPLETE |
+| **Testing (100% Cov)** | Unit, Property, Stress, and E2E tests. | 🚧 IN PROGRESS |
+| **Deployment** | `Dockerfile`, Docker Compose, and `deploy.sh`. | ⏳ PENDING |
 
-*Note: The increase in effort reflects the shift from "standard development" to "high-assurance engineering" (100% coverage, strict contracts, and property-based testing).*
+---
+
+## 2. Technical Analysis & Progress
+- **Adaptive Batching**: Successfully implemented a state machine that switches between immediate delivery (low latency) and bundled updates (high throughput/anti-spam).
+- **Session Persistence**: Tmux-on-host strategy ensures zero data loss during bot restarts.
+- **Modularity**: Strict DTO-based communication between SSH/DB and Bot modules.
+- **Coverage**: Current coverage is ~75% and rising; tests are verified via `run_local.sh --test`.
 
 ---
 

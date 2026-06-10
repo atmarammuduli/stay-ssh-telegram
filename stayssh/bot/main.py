@@ -299,11 +299,9 @@ async def output_monitor_task(application) -> None:
             
         await asyncio.sleep(settings.POLL_INTERVAL_MS / 1000.0)
 
-async def main() -> None:
+async def post_init(application) -> None:
+    """Async initialization after the application is built."""
     global batcher
-    
-    # Initialize Bot
-    application = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
     
     # Initialize Batcher
     async def telegram_sender(text: str):
@@ -317,6 +315,14 @@ async def main() -> None:
         await sync_service.sync_on_startup(settings.ADMIN_USER_ID)
         await db.commit()
 
+    # Background Tasks
+    asyncio.create_task(output_monitor_task(application))
+    logger.info("StaySSH Bot initialized and background tasks started.")
+
+def main() -> None:
+    # Initialize Bot
+    application = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).post_init(post_init).build()
+    
     # Handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("sessions", list_sessions))
@@ -328,14 +334,11 @@ async def main() -> None:
     application.add_handler(CommandHandler("restart", restart_bot))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_command))
 
-    # Background Tasks
-    asyncio.create_task(output_monitor_task(application))
-
-    logger.info("StaySSH Bot is running.")
-    await application.run_polling()
+    logger.info("StaySSH Bot is starting...")
+    application.run_polling()
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         logger.info("StaySSH Bot stopped by user.")

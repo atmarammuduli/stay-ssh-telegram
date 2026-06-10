@@ -10,7 +10,10 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    active_session_id: Mapped[Optional[int]] = mapped_column(ForeignKey("sessions.id"), nullable=True)
+    active_session_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("sessions.id", name="fk_user_active_session", use_alter=True), 
+        nullable=True
+    )
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
