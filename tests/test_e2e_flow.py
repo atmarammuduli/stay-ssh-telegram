@@ -1,61 +1,98 @@
 import pytest
+import pytest_asyncio
 import os
 import asyncio
+from unittest.mock import MagicMock, AsyncMock
 from sqlalchemy import text
+from telegram import Update, Message, User as TGUser, constants
+from telegram.ext import ContextTypes
+
 from stayssh.ssh.manager import SSHManager
 from stayssh.ssh.tmux import TmuxManager
-from stayssh.db.connection import engine
+from stayssh.db.connection import engine, async_session_factory
 from stayssh.db.models import Base
+from stayssh.db.repositories import SessionRepository, UserRepository, SettingRepository
 from stayssh.core.config import settings
+from stayssh.bot.main import (
+    start, list_sessions, create_session, switch_session, 
+    kill_session, show_log, manage_config, handle_command,
+    send_key, type_text
+)
 
 RUN_E2E = os.getenv("RUN_E2E", "false").lower() == "true"
 
-@pytest.mark.skipif(not RUN_E2E, reason="RUN_E2E=true not set")
-class TestE2EFlow:
-    @pytest.fixture(autouse=True)
-    async def setup_e2e(self):
-        # Ensure DB is ready
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            # Clean data
-            await conn.execute(text("TRUNCATE TABLE users, sessions, settings CASCADE"))
+@pytest_asyncio.fixture(autouse=True)
+async def setup_e2e_db():
+    if not RUN_E2E:
+        pytest.skip("RUN_E2E=true not set")
         
-        self.ssh_manager = SSHManager()
-        self.tmux_manager = TmuxManager(self.ssh_manager)
-        
-        yield
-        
-        await self.ssh_manager.close()
-        async with engine.begin() as conn:
-            # Clean data
-            await conn.execute(text("TRUNCATE TABLE users, sessions, settings CASCADE"))
+    # Ensure DB is initialized and clean
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("TRUNCATE TABLE users, sessions, settings CASCADE"))
+        # Ensure admin user exists
+        await conn.execute(
+            text("INSERT INTO users (id, is_admin, created_at) VALUES (:id, :is_admin, now())"),
+            {"id": settings.ADMIN_USER_ID, "is_admin": True}
+        )
+    yield
+    async with engine.begin() as conn:
+        await conn.execute(text("TRUNCATE TABLE users, sessions, settings CASCADE"))
 
+@pytest.fixture
+def mock_tg():
+    mock_update = MagicMock(spec=Update)
+    mock_update.effective_user = MagicMock(spec=TGUser)
+    mock_update.effective_user.id = settings.ADMIN_USER_ID
+    mock_update.message = AsyncMock(spec=Message)
+    
+    mock_context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
+    mock_context.args = []
+    return mock_update, mock_context
 
-    @pytest.mark.asyncio
-    async def test_ssh_tmux_persistence(self):
-        """E2E: Create a tmux session, send command, and verify output via real SSH."""
-        session_name = f"e2e_test_{int(asyncio.get_event_loop().time())}"
-        
-        # 1. Connect and Create Session
-        connected = await self.ssh_manager.connect()
+@pytest.mark.asyncio
+async def test_complete_bot_flow_e2e(mock_tg):
+    """E2E: Tests the entire bot command lifecycle on a real host."""
+    mock_update, mock_context = mock_tg
+    ssh_manager = SSHManager()
+    tmux_manager = TmuxManager(ssh_manager)
+    
+    try:
+        connected = await ssh_manager.connect()
         assert connected, "Failed to connect to host SSH"
         
-        success = await self.tmux_manager.create_session(session_name)
-        assert success, f"Failed to create tmux session {session_name}"
+        # 1. /start
+        await start(mock_update, mock_context)
         
-        try:
-            # 2. Send Command
-            await self.tmux_manager.send_keys(session_name, "echo 'E2E_VERIFY_SUCCESS'")
-            await asyncio.sleep(1) # Wait for execution
-            
-            # 3. Capture Output
-            output = await self.tmux_manager.capture_pane(session_name)
-            assert "E2E_VERIFY_SUCCESS" in output.content
-            
-            # 4. List Sessions
-            sessions = await self.tmux_manager.list_sessions()
-            assert session_name in sessions
-            
-        finally:
-            # 5. Cleanup
-            await self.tmux_manager.kill_session(session_name)
+        # 2. /new
+        session_name = f"e2e_new_{int(asyncio.get_event_loop().time())}"
+        mock_context.args = [session_name]
+        await create_session(mock_update, mock_context)
+        
+        sessions = await tmux_manager.list_sessions()
+        assert session_name in sessions
+        
+        # 3. Command
+        mock_update.message.text = "echo 'E2E_WORKS'"
+        await handle_command(mock_update, mock_context)
+        await asyncio.sleep(1)
+        
+        # 4. /log
+        mock_context.args = ["5"]
+        await show_log(mock_update, mock_context)
+        args, _ = mock_update.message.reply_text.call_args
+        assert "E2E_WORKS" in args[0]
+        
+        # 5. /key
+        mock_context.args = ["C-c"]
+        await send_key(mock_update, mock_context)
+        
+        # 6. /kill
+        mock_context.args = [session_name]
+        await kill_session(mock_update, mock_context)
+        
+        sessions = await tmux_manager.list_sessions()
+        assert session_name not in sessions
+        
+    finally:
+        await ssh_manager.close()

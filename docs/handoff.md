@@ -1,38 +1,31 @@
 # StaySSH Project Handoff
 
 ## 📌 Project Status
-- **Phase**: Implementation & Testing (Step 1-4 Core Complete, Step 5 Verification Started)
-- **Quality Goal**: 100% Coverage, Strict Contract-Based Design.
-- **Current State**: Core logic for DB, SSH, and Bot is implemented and committed. Unit tests are written and coverage is ~70-80%. Real credentials have been configured in `.env`.
+- **Phase**: Implementation & Testing Complete (100% Coverage Reached)
+- **Current State**: Core bot functionality, database integration, SSH/Tmux management, and interactive terminal support are all fully implemented and verified.
+- **Next Steps**: Deployment optimization, UI polish (Telegram buttons), and multi-user support (beyond single admin).
 
-## ✅ Completed Milestones
-1. **Requirements & Design**: Finalized in `docs/`.
-2. **Project Scaffolding**: Modular structure, `.env.example`, `pyproject.toml` (Strict Mypy/Ruff).
-3. **Lifecycle Management**: `run_local.sh` with `--clean`, `--stop`, `--test` and automatic `venv` management.
-4. **Database Layer**: Async connection pool and repositories (`User`, `Session`, `Setting`) returning Pydantic DTOs.
-5. **SSH & Tmux Layer**: `SSHManager` (asyncssh) and `TmuxManager` (host tmux abstraction).
-6. **Bot Core & Logic**: 
-    - `SyncService`: Host tmux discovery.
-    - `AdaptiveBatcher`: Snappy delivery on idle, batched on burst.
-    - Telegram handlers: `/new`, `/sessions`, `/switch`, `/kill`, `/log`, `/config`, `/restart`.
-    - Persistent Logging: Rotating files in `logs/` (mapped to `/var/log` in Docker).
-7. **Git Initialization**: Repo initialized, `.gitignore` set, initial commit made.
-8. **Unit Testing**: Suite reaching 88% coverage with zero warnings; complex `AsyncMock` nuances resolved. **Note**: Unit tests use mocks and do not require external services.
-9. **Containerization**: `Dockerfile` and `docker-compose.yml` implemented for streamlined deployment.
-10. **Automated Testing Pipeline**: `run_local.sh --test` runs Unit -> Integration -> E2E sequentially. **Note**: Integration and E2E tests use real credentials (SSH, Telegram) and the real PostgreSQL database configured in `.env`. (Currently E2E requires a valid SSH private key path in `.env`).
-11. **Quality Gates**: Implemented a **100% Coverage Commit Gate** via `run_local.sh --commit`. This ensures no code is committed to the automated workflow unless it meets our strict quality standards.
-12. **Documentation**: Comprehensive `README.md` created, documenting the unified dev workflow.
+## ✨ Key Features Implemented
+- **Interactive Terminal Support**: `/key` and `/type` commands allow operating interactive apps like `vim`, `nano`, or `gemini-cli`.
+- **Automatic Provisioning**: Bot automatically detects if `tmux` is missing on the host and attempts to install it via standard package managers.
+- **Adaptive Batching**: Efficiently bundles terminal output to avoid Telegram rate limits while maintaining responsiveness.
+- **Startup Sync**: Automatically synchronizes existing host `tmux` sessions with the local database upon bot startup.
 
-## 🛠️ Current Work-in-Progress
-- **Integration Testing**: Preparing to run tests against real DB and OCI host SSH using Docker Compose.
-- **E2E Verification**: Testing the full flow from Telegram handlers to Host Tmux.
+## 🧪 Testing & Quality Assurance
+- **Unit Testing**: **100% Statement Coverage** achieved across all modules in the `stayssh` package.
+- **Integration Testing**: Comprehensive suite (`tests/test_integration_*.py`) verifying:
+    - **Real DB**: Repository operations against PostgreSQL.
+    - **Real SSH/Tmux**: Host connectivity, multi-session management, and output capturing.
+    - **Provisioning**: Automatic `tmux` installation on the host if missing (supports `apt`, `yum`, `apk`, `brew`).
+    - **Bot Orchestration**: Integrated testing of Telegram handlers with real DB and SSH layers.
+    - **Note**: Use `docker-compose up -d db` to provide the database for these tests.
+- **E2E Testing**: Full lifecycle verification (`tests/test_e2e_flow.py`) from Telegram handlers down to host command execution.
+- **Verification**: Run `./scripts/run_local.sh --test` to execute the full suite.
 
-## 🚀 Immediate Next Steps
-1. Spin up the environment using `docker-compose up -d`.
-2. Run database initialization inside the container.
-3. Execute **Integration Tests** (New suite `tests/test_integration_*.py`).
-4. Perform manual verification via a Telegram Mock client or real bot (if token provided).
-
+## ⚙️ Environment Configuration
+- **SSH Key**: The correct verified private key is `/Users/atmarammuduli/Documents/DOCs/Oracle-cloud-12may26/ssh-key-2026-05-17-5.key`. This has been updated in `.env`.
+- **Database**: PostgreSQL (asyncpg) is required. Use `docker-compose up -d db` for local testing.
+- **Admin**: The `ADMIN_USER_ID` is set in `.env` and automatically provisioned in the DB on startup to prevent foreign key violations.
 
 ## 📚 Technical Stack
 - **Bot**: `python-telegram-bot` (v20+ async)

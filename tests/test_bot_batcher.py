@@ -66,3 +66,19 @@ async def test_batcher_send_failure(batcher, mock_send):
     await batcher.add_message("session1", "hello")
     # Should not crash
     mock_send.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_batcher_length_limit(batcher, mock_send):
+    """Verify that very long messages are truncated."""
+    long_msg = "x" * 5000
+    await batcher.add_message("session1", long_msg)
+    
+    sent_text = mock_send.call_args[0][0]
+    assert len(sent_text) <= 4000
+    assert sent_text.endswith("...")
+
+@pytest.mark.asyncio
+async def test_batcher_flush_empty(batcher, mock_send):
+    """Verify that _flush_now does nothing when buffer is empty."""
+    await batcher._flush_now()
+    mock_send.assert_not_called()

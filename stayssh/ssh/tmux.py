@@ -11,6 +11,33 @@ class TmuxManager:
     def __init__(self, ssh: SSHManager) -> None:
         self.ssh = ssh
 
+    async def check_and_provision(self) -> bool:
+        """Checks if tmux is installed and attempts to install it if missing."""
+        result = await self.ssh.run_command("which tmux")
+        if result.exit_code == 0:
+            return True
+
+        logger.warning("tmux not found on host. Attempting to provision...")
+        
+        # Try to identify package manager and install
+        # This is a basic implementation; in a real world, we might want more robust detection
+        install_commands = [
+            "sudo apt-get update && sudo apt-get install -y tmux",
+            "sudo yum install -y tmux",
+            "sudo apk add tmux",
+            "brew install tmux"
+        ]
+        
+        for cmd in install_commands:
+            logger.info(f"Trying to install tmux with: {cmd}")
+            install_result = await self.ssh.run_command(cmd)
+            if install_result.exit_code == 0:
+                logger.info("tmux successfully installed.")
+                return True
+        
+        logger.error("Failed to provision tmux on host.")
+        return False
+
     async def list_sessions(self) -> List[str]:
         """Lists active tmux session names on the host."""
         # -F "#{session_name}" ensures we only get the names
@@ -39,12 +66,20 @@ class TmuxManager:
             return False
         return True
 
-    async def send_keys(self, name: str, cmd: str) -> bool:
+    async def send_keys(self, name: str, cmd: str, enter: bool = True) -> bool:
         """Sends a command to a tmux session."""
-        # Enter is added to execute the command
-        result = await self.ssh.run_command(f'tmux send-keys -t {name} "{cmd}" C-m')
+        suffix = " C-m" if enter else ""
+        result = await self.ssh.run_command(f"tmux send-keys -t {name} \"{cmd}\"{suffix}")
         if result.exit_code != 0:
             logger.error(f"Failed to send keys to session '{name}': {result.stderr}")
+            return False
+        return True
+
+    async def send_raw_key(self, name: str, key: str) -> bool:
+        """Sends a raw tmux key sequence (e.g. 'C-c', 'Escape', 'Up')."""
+        result = await self.ssh.run_command(f"tmux send-keys -t {name} {key}")
+        if result.exit_code != 0:
+            logger.error(f"Failed to send raw key '{key}' to session '{name}': {result.stderr}")
             return False
         return True
 

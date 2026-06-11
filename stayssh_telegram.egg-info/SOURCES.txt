@@ -24,5 +24,6 @@ tests/test_db_connection.py
 tests/test_db_repositories.py
 tests/test_e2e_flow.py
 tests/test_integration_db.py
+tests/test_integration_system.py
 tests/test_ssh_manager.py
 tests/test_ssh_tmux.py

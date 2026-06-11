@@ -64,10 +64,60 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/switch <name> - Switch active session\n"
         "/kill <name> - Kill a session\n"
         "/log <n> - Show last N lines\n"
+        "/key <k> - Send special key (e.g. Escape, C-c)\n"
+        "/type <t> - Type text without Enter\n"
         "/status - Show current session info\n\n"
         "Send any text to execute it in the active session.",
         parse_mode=constants.ParseMode.HTML
     )
+
+async def send_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles /key <key>."""
+    if update.effective_user.id != settings.ADMIN_USER_ID: return
+    if not context.args:
+        await update.message.reply_text("⚠️ Usage: /key <key_name> (e.g. Escape, C-c, Up)")
+        return
+    
+    key = context.args[0]
+    async with async_session_factory() as db:
+        user_repo = UserRepository(db)
+        user_data = await user_repo.get_or_create(update.effective_user.id)
+        if not user_data.active_session_id:
+            await update.message.reply_text("⚠️ No active session.")
+            return
+            
+        from sqlalchemy import select
+        from stayssh.db.models import Session
+        stmt = select(Session.name).where(Session.id == user_data.active_session_id)
+        result = await db.execute(stmt)
+        session_name = result.scalar_one_or_none()
+        
+        if session_name:
+            await tmux_manager.send_raw_key(session_name, key)
+
+async def type_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles /type <text>."""
+    if update.effective_user.id != settings.ADMIN_USER_ID: return
+    if not context.args:
+        await update.message.reply_text("⚠️ Usage: /type <text>")
+        return
+    
+    text = " ".join(context.args)
+    async with async_session_factory() as db:
+        user_repo = UserRepository(db)
+        user_data = await user_repo.get_or_create(update.effective_user.id)
+        if not user_data.active_session_id:
+            await update.message.reply_text("⚠️ No active session.")
+            return
+            
+        from sqlalchemy import select
+        from stayssh.db.models import Session
+        stmt = select(Session.name).where(Session.id == user_data.active_session_id)
+        result = await db.execute(stmt)
+        session_name = result.scalar_one_or_none()
+        
+        if session_name:
+            await tmux_manager.send_keys(session_name, text, enter=False)
 
 async def list_sessions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles /sessions."""
@@ -308,8 +358,11 @@ async def post_init(application) -> None:
         await application.bot.send_message(chat_id=settings.ADMIN_USER_ID, text=text, parse_mode=constants.ParseMode.HTML)
     batcher = AdaptiveBatcher(telegram_sender)
 
-    # Startup Sync
+    # Ensure Admin User Exists (to prevent FK errors during sync)
     async with async_session_factory() as db:
+        user_repo = UserRepository(db)
+        await user_repo.get_or_create(settings.ADMIN_USER_ID, is_admin=True)
+        
         session_repo = SessionRepository(db)
         sync_service = SyncService(session_repo, tmux_manager)
         await sync_service.sync_on_startup(settings.ADMIN_USER_ID)
@@ -330,6 +383,8 @@ def main() -> None:
     application.add_handler(CommandHandler("switch", switch_session))
     application.add_handler(CommandHandler("kill", kill_session))
     application.add_handler(CommandHandler("log", show_log))
+    application.add_handler(CommandHandler("key", send_key))
+    application.add_handler(CommandHandler("type", type_text))
     application.add_handler(CommandHandler("config", manage_config))
     application.add_handler(CommandHandler("restart", restart_bot))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_command))
@@ -337,7 +392,7 @@ def main() -> None:
     logger.info("StaySSH Bot is starting...")
     application.run_polling()
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     try:
         main()
     except KeyboardInterrupt:

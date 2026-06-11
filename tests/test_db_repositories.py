@@ -87,6 +87,16 @@ async def test_user_repo_set_active(mock_db):
     mock_db.execute.assert_called_once()
 
 @pytest.mark.asyncio
+async def test_setting_repo_get_value(mock_db):
+    repo = SettingRepository(mock_db)
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = "v"
+    mock_db.execute.return_value = mock_result
+    
+    val = await repo.get_value("k")
+    assert val == "v"
+
+@pytest.mark.asyncio
 async def test_setting_repo_update(mock_db):
     repo = SettingRepository(mock_db)
     mock_setting = Setting(key="k", value="v")
@@ -97,4 +107,15 @@ async def test_setting_repo_update(mock_db):
     
     await repo.set_value("k", "v2")
     assert mock_setting.value == "v2"
+
+@pytest.mark.asyncio
+async def test_setting_repo_create_new(mock_db):
+    repo = SettingRepository(mock_db)
+    
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = mock_result
+    
+    await repo.set_value("k", "v")
+    mock_db.add.assert_called_once()
 

@@ -106,8 +106,8 @@ if [ "$RUN_TESTS" = true ]; then
         tests/test_bot_batcher.py tests/test_bot_main.py tests/test_bot_sync.py tests/test_core_config.py \
         tests/test_db_connection.py tests/test_db_repositories.py tests/test_ssh_manager.py tests/test_ssh_tmux.py
     
-    echo "🧪 Running Integration Tests (Real DB)..."
-    RUN_INTEGRATION=true pytest tests/test_integration_db.py
+    echo "🧪 Running Integration Tests (Real DB + Real SSH)..."
+    RUN_INTEGRATION=true pytest tests/test_integration_db.py tests/test_integration_system.py
     
     echo "🧪 Running E2E Tests (Real SSH + Real DB)..."
     if [ -f tests/test_e2e_flow.py ]; then

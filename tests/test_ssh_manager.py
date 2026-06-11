@@ -33,6 +33,11 @@ async def test_connect_success(ssh_manager):
         assert success is True
         assert ssh_manager.connection is not None
         mock_connect.assert_called_once()
+        
+        # Test already connected
+        success = await ssh_manager.connect()
+        assert success is True
+        mock_connect.assert_called_once() # Should not call connect again
 
 @pytest.mark.asyncio
 async def test_connect_failure(ssh_manager):
@@ -79,5 +84,19 @@ async def test_close(ssh_manager):
     mock_conn.close.assert_called_once()
     mock_conn.wait_closed.assert_called_once()
     assert ssh_manager.connection is None
+
+@pytest.mark.asyncio
+async def test_ensure_connected(ssh_manager):
+    ssh_manager.connection = MagicMock()
+    success = await ssh_manager.ensure_connected()
+    assert success is True
+
+@pytest.mark.asyncio
+async def test_ensure_connected_call_connect(ssh_manager):
+    ssh_manager.connection = None
+    with patch.object(ssh_manager, "connect", return_value=True) as mock_connect:
+        success = await ssh_manager.ensure_connected()
+        assert success is True
+        mock_connect.assert_called_once()
 
 
