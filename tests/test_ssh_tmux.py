@@ -82,14 +82,15 @@ async def test_create_session_failure(tmux_manager, mock_ssh):
 
 @pytest.mark.asyncio
 async def test_capture_pane(tmux_manager, mock_ssh):
-    """Verify capture pane and line counting."""
+    """Verify capture pane and line counting with rstrip."""
     mock_ssh.run_command.return_value = CommandResultDTO(
-        exit_code=0, stdout="line1\nline2\nline3", stderr="", duration=0.1
+        exit_code=0, stdout="line1\nline2\nline3\n\n", stderr="", duration=0.1
     )
     output = await tmux_manager.capture_pane("test")
     assert output.content == "line1\nline2\nline3"
     assert output.line_count == 3
     assert output.session_name == "test"
+    mock_ssh.run_command.assert_called_with("tmux capture-pane -p -S - -t test")
 
 @pytest.mark.asyncio
 async def test_kill_session(tmux_manager, mock_ssh):

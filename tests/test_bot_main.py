@@ -505,19 +505,23 @@ async def test_output_monitor_task(mock_update):
         
         with patch("stayssh.db.repositories.SessionRepository.get_active_sessions", return_value=[mock_session]):
             with patch("stayssh.bot.main.tmux_manager", spec=True) as mock_tmux:
-                mock_tmux.capture_pane = AsyncMock(return_value=TmuxOutputDTO(session_name="s1", content="line1\nline2", line_count=2))
+                # First call: 2 lines (initial state). Second call: 3 lines (new output).
+                mock_tmux.capture_pane = AsyncMock(side_effect=[
+                    TmuxOutputDTO(session_name="s1", content="line1\nline2", line_count=2),
+                    TmuxOutputDTO(session_name="s1", content="line1\nline2\nline3", line_count=3)
+                ])
                 
                 with patch("stayssh.bot.main.batcher", spec=True) as mock_batcher:
                     mock_batcher.add_message = AsyncMock()
                     
-                    # We only want one loop iteration for testing
-                    with patch("asyncio.sleep", side_effect=[None, Exception("Stop loop")]):
+                    # We want two loop iterations: one for initial state, one for new output
+                    with patch("asyncio.sleep", side_effect=[None, None, Exception("Stop loop")]):
                         try:
                             await output_monitor_task(mock_app)
                         except Exception as e:
                             if str(e) != "Stop loop": raise
                     
-                    mock_batcher.add_message.assert_called()
+                    mock_batcher.add_message.assert_called_once_with("s1", "line3")
 
 @pytest.mark.asyncio
 async def test_post_init(patch_db):
@@ -572,3 +576,35 @@ def test_keyboard_interrupt():
             except:
                 pass
             mock_logger.info.assert_any_call("StaySSH Bot stopped by user.")
+
+@pytest.mark.asyncio
+async def test_output_monitor_task_reset(mock_update):
+    """Test output monitor task when line count decreases (e.g. history cleared)."""
+    mock_app = MagicMock()
+    mock_session = SessionDTO(id=1, name="s1", status=SessionStatus.ACTIVE, creator_id=1, last_activity=datetime.utcnow(), created_at=datetime.utcnow())
+    
+    with patch("stayssh.bot.main.async_session_factory") as mock_db:
+        mock_session_obj = AsyncMock()
+        mock_session_obj.__aenter__.return_value = mock_session_obj
+        mock_db.return_value = mock_session_obj
+        
+        with patch("stayssh.db.repositories.SessionRepository.get_active_sessions", return_value=[mock_session]):
+            with patch("stayssh.bot.main.tmux_manager", spec=True) as mock_tmux:
+                # 1st iteration: 10 lines
+                # 2nd iteration: 5 lines (reset)
+                mock_tmux.capture_pane = AsyncMock(side_effect=[
+                    TmuxOutputDTO(session_name="s1", content="line\n"*10, line_count=10),
+                    TmuxOutputDTO(session_name="s1", content="line\n"*5, line_count=5)
+                ])
+                
+                with patch("stayssh.bot.main.batcher", spec=True) as mock_batcher:
+                    mock_batcher.add_message = AsyncMock()
+                    # Run 2 iterations then stop
+                    with patch("asyncio.sleep", side_effect=[None, None, Exception("Stop loop")]):
+                        try:
+                            await output_monitor_task(mock_app)
+                        except Exception as e:
+                            if str(e) != "Stop loop": raise
+                    
+                    # Should NOT have called add_message during reset (count went from 10 to 5)
+                    assert mock_batcher.add_message.call_count == 0

@@ -333,16 +333,26 @@ async def output_monitor_task(application) -> None:
                 if not output_dto:
                     continue
                 
-                last_count = session_line_counts.get(session.name, 0)
                 lines = output_dto.content.splitlines()
                 new_count = len(lines)
+                
+                if session.name not in session_line_counts:
+                    # Initial state: just track current count, don't dump history
+                    logger.debug(f"Tracking session '{session.name}' starting at {new_count} lines.")
+                    session_line_counts[session.name] = new_count
+                    continue
+
+                last_count = session_line_counts[session.name]
                 
                 if new_count > last_count:
                     new_lines = lines[last_count:]
                     new_text = "\n".join(new_lines)
                     await batcher.add_message(session.name, new_text)
-                
-                session_line_counts[session.name] = new_count
+                    session_line_counts[session.name] = new_count
+                elif new_count < last_count:
+                    # History probably cleared or reset
+                    logger.debug(f"Session '{session.name}' line count reset ({last_count} -> {new_count}).")
+                    session_line_counts[session.name] = new_count
                 
         except Exception as e:
             logger.error(f"Error in output monitor: {e}")

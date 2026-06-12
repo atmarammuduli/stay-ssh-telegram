@@ -1,68 +1,92 @@
 # StaySSH Telegram Bot
 
-A robust, production-ready SSH Telegram bot with `tmux` persistence and adaptive delivery. Manage your remote servers directly from Telegram with high reliability and zero-hassle session management.
+A robust, production-ready SSH Telegram bot that provides a secure gateway to your Docker host or any remote server. It leverages `tmux` for session persistence, multi-session management, and adaptive output delivery.
 
 ## 🚀 Key Features
 
-- **Persistent Sessions**: Powered by `tmux` on the host, your processes keep running even if you disconnect.
-- **Adaptive Batching**: Snappy output delivery when idle, efficient batching during command bursts.
-- **Async & Fast**: Built with `python-telegram-bot` v20+ and `asyncssh`.
-- **Quality Ensured**: Strict 100% test coverage requirement for all commits.
-- **Database Driven**: Tracks user sessions and configurations in PostgreSQL.
+-   **Session Persistence**: Close Telegram and come back later; your terminal state is preserved via `tmux`.
+-   **Multi-Session Support**: Manage multiple independent terminal sessions on the same host.
+-   **Interactive Terminal Support**: Send special keys (Escape, Ctrl+C) and type raw text to operate apps like `vim`, `nano`, or interactive CLIs.
+-   **Adaptive Batching**: Intelligently bundles output to avoid Telegram rate limits while maintaining snappy responsiveness.
+-   **Auto-Provisioning**: Automatically installs `tmux` on the host if it's missing (supports apt, yum, apk, brew).
+-   **Robust Security**: Strict admin-only access and encrypted SSH communication.
 
-## 🛠️ Local Development & Workflow
+## 🛠 Setup & Installation
 
-We use a consolidated management script `scripts/run_local.sh` to handle all phases of development.
+### Prerequisites
+-   Python 3.9+
+-   PostgreSQL (Running locally or via Docker)
+-   An SSH host with a private key (RSA/PEM)
+-   A Telegram Bot Token (from [@BotFather](https://t.me/botfather))
 
-### 1. Setup
-
-Clone the repo and configure your environment:
+### 1. Clone & Install
 ```bash
-cp .env.example .env
-# Edit .env with your Telegram Token, SSH credentials, and DB URL
+git clone https://github.com/youruser/stayssh-telegram.git
+cd stayssh-telegram
+# The run script handles venv creation automatically
+./scripts/run_local.sh --test
 ```
 
-### 2. Running the Bot
+### 2. Configure Environment
+Copy `.env.example` to `.env` and fill in your details:
+-   `TELEGRAM_TOKEN`: Your bot token.
+-   `ADMIN_USER_ID`: Your numeric Telegram ID.
+-   `HOST_SSH_URL`: `ssh://user@ip:port`
+-   `SSH_KEY_PATH`: Absolute path to your private key.
+-   `DATABASE_URL`: `postgresql+asyncpg://user:pass@localhost:5432/stayssh`
 
-To start the bot locally (this will automatically initialize the database and kill any stale instances):
+### 3. Run
 ```bash
+# Start in background with logging
 ./scripts/run_local.sh
 ```
 
-### 3. Testing Pipeline
+---
 
-Run the full testing lifecycle (Unit -> Integration -> E2E):
+## 📖 Command Reference
+
+The bot handles commands and raw text input. Ensure you have an **active session** selected before sending raw commands.
+
+### Session Management
+-   `/new <name>`: Create a new detached tmux session on the host and select it.
+-   `/sessions`: List all active tmux sessions on the host.
+-   `/switch <name>`: Switch the bot's active context to an existing session.
+-   `/kill <name>`: Terminate a tmux session on the host.
+-   `/status`: Show current connection info and the name of the active session.
+
+### Terminal Interaction
+-   **`<Any Text>`**: Send text followed by `Enter` (C-m) to the active session.
+-   `/type <text>`: Type text raw into the session **without** sending an `Enter` (useful for passwords or partial commands).
+-   `/key <key_name>`: Send a special tmux key sequence.
+    -   *Examples*: `/key Escape`, `/key C-c` (Ctrl+C), `/key Up`, `/key Down`, `/key Tab`.
+-   `/log <n>`: Capture and display the last `N` lines of history from the active pane (default: 20).
+
+### Bot Administration
+-   `/config`: View current bot settings.
+-   `/config set <key> <value>`: Update settings (e.g., `BATCH_INTERVAL_MS`) on the fly.
+-   `/restart`: Force the bot container/process to restart.
+
+---
+
+## 🧪 Testing & Quality
+
+We maintain **100% Statement Coverage** for core logic.
+
 ```bash
+# Run unit, integration, and E2E tests
 ./scripts/run_local.sh --test
 ```
-- **Unit Tests**: Fast, uses mocks.
-- **Integration Tests**: Requires a real PostgreSQL database (uses `RUN_INTEGRATION=true`).
-- **E2E Tests**: Requires real SSH access to the host (uses `RUN_E2E=true`).
 
-### 4. The Commit Gate (Quality Control)
+-   **Unit Tests**: Mocked interactions; no external services required.
+-   **Integration Tests**: Real DB + Real SSH verification.
+-   **E2E Tests**: Full flow from Telegram handlers to Host Shell.
 
-We enforce a **100% Coverage Gate**. You cannot commit using our automated workflow unless all tests pass and coverage is perfect.
+---
 
-To verify and commit:
-```bash
-./scripts/run_local.sh --commit
-```
-If the gate is proved (100% coverage), the script will prompt you for a commit message and handle the `git add/commit` for you.
+## 📂 Project Structure
 
-## 🐳 Deployment (Docker)
-
-The bot is fully containerized. Use Docker Compose to spin up the bot and database:
-
-```bash
-docker-compose up -d
-# Initialize DB inside the container
-docker-compose exec bot python -m stayssh.db.init_db
-```
-
-## 📚 Documentation
-
-Detailed technical docs can be found in the `docs/` folder:
-- [Architecture](docs/architecture.md)
-- [Design Specifications](docs/design.md)
-- [Project Handoff](docs/handoff.md)
-- [Test Plan](docs/tests.md)
+-   `stayssh/bot/`: Telegram handlers and message batching logic.
+-   `stayssh/ssh/`: SSH connectivity and tmux orchestration.
+-   `stayssh/db/`: Async SQLAlchemy models and repositories.
+-   `docs/`: Detailed technical specifications and handoff docs.
+-   `scripts/`: Management and lifecycle utilities.

@@ -84,22 +84,24 @@ class TmuxManager:
         return True
 
     async def capture_pane(self, name: str, start_line: Optional[int] = None) -> Optional[TmuxOutputDTO]:
-        """Captures the output of a tmux pane."""
-        cmd = f"tmux capture-pane -p -t {name}"
-        if start_line is not None:
-            # Note: capturing from a specific line is tricky in raw tmux.
-            # We capture all and let the caller diff, or use -S to specify start.
-            pass
+        """Captures the output of a tmux pane, including history."""
+        # -S - captures from the start of history
+        # -J joins wrapped lines (optional, but good for clean output)
+        cmd = f"tmux capture-pane -p -S - -t {name}"
             
         result = await self.ssh.run_command(cmd)
         if result.exit_code != 0:
             logger.error(f"Failed to capture pane for '{name}': {result.stderr}")
             return None
         
-        lines = result.stdout.splitlines()
+        # We rstrip() to ignore trailing empty lines in the visible pane,
+        # ensuring the line count reflects actual content.
+        content = result.stdout.rstrip()
+        lines = content.splitlines()
+        
         return TmuxOutputDTO(
             session_name=name,
-            content=result.stdout,
+            content=content,
             line_count=len(lines)
         )
 
