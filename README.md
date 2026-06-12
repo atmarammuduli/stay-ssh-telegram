@@ -35,11 +35,32 @@ Copy `.env.example` to `.env` and fill in your details:
 -   `SSH_KEY_PATH`: Absolute path to your private key.
 -   `DATABASE_URL`: `postgresql+asyncpg://user:pass@localhost:5432/stayssh`
 
-### 3. Run
+### 3. Run (Local)
 ```bash
 # Start in background with logging
 ./scripts/run_local.sh
 ```
+
+### 4. Run (Docker)
+Ensure you have Docker and Docker Compose installed. The bot is configured to use an **external database** (either on the host or a remote server).
+
+2.  **Configure `.env` for Docker**:
+    If your database is running on the local host (outside Docker), update your `DATABASE_URL` to use `host.docker.internal` instead of `localhost`. 
+    
+    Also, ensure your `SSH_KEY_PATH` points to the **internal container path**. Since `./keys` is mapped to `/app/keys`, your `.env` should look like this:
+    ```env
+    DATABASE_URL=postgresql+asyncpg://user:pass@host.docker.internal:5432/stayssh
+    SSH_KEY_PATH=/app/keys/your_key_file
+    ```
+
+3.  **Start the Bot**:
+    ```bash
+    # Build and start services
+    docker-compose up -d --build
+
+    # Initialize Database (first time only)
+    docker-compose exec bot python -m stayssh.db.init_db
+    ```
 
 ---
 

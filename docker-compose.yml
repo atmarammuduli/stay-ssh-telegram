@@ -1,31 +1,15 @@
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: stayssh-db
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER:-stayssh}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-stayssh_password}
-      POSTGRES_DB: ${DB_NAME:-stayssh}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
   bot:
     build: .
     container_name: stayssh-bot
     restart: unless-stopped
-    depends_on:
-      - db
     env_file:
       - .env
-    environment:
-      DATABASE_URL: postgresql+asyncpg://${DB_USER:-stayssh}:${DB_PASSWORD:-stayssh_password}@db:5432/${DB_NAME:-stayssh}
+    # We use the DATABASE_URL from .env directly.
+    # Note: If using a DB on the host, use 'host.docker.internal' in .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./logs:/app/logs
       - ./keys:/app/keys
-      - /var/run/docker.sock:/var/run/docker.sock # Optional: if we want to monitor other containers
-
-volumes:
-  pgdata:
+      - /var/run/docker.sock:/var/run/docker.sock

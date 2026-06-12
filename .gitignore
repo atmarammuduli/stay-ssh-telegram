@@ -1,6 +1,6 @@
 venv/
 *.log
-.env
+.env**
 .stayssh.pid
 __pycache__/
 .pytest_cache/
