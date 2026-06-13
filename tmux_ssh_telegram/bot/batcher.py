@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-from stayssh.core.config import settings
+from tmux_ssh_telegram.core.config import settings
 
 logger = logging.getLogger(__name__)
 

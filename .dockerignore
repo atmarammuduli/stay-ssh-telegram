@@ -1,0 +1,20 @@
+venv/
+.git/
+.pytest_cache/
+__pycache__/
+*.log
+.env
+.env.prod
+.env.example
+*.egg-info/
+.stayssh.pid
+.tmux_ssh_telegram.pid
+docs/
+tests/
+# scripts/ is needed for create_db
+# entrypoint.sh is needed for the container start
+# Dockerfile and docker-compose.yml are handled by the host but good to ignore for image size
+Dockerfile
+docker-compose.yml
+README.md
+deploy.sh

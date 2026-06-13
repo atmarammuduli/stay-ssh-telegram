@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import List, Optional, Any
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from stayssh.db.models import User, Session, Setting
-from stayssh.core.models import SessionDTO, SessionStatus
+from tmux_ssh_telegram.db.models import User, Session, Setting
+from tmux_ssh_telegram.core.models import SessionDTO, SessionStatus
 
 class SessionRepository:
     def __init__(self, db: AsyncSession):

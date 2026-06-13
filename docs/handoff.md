@@ -12,7 +12,7 @@
 - **Startup Sync**: Automatically synchronizes existing host `tmux` sessions with the local database upon bot startup.
 
 ## 🧪 Testing & Quality Assurance
-- **Unit Testing**: **100% Statement Coverage** achieved across all modules in the `stayssh` package.
+- **Unit Testing**: **100% Statement Coverage** achieved across all modules in the `tmux_ssh_telegram` package.
 - **Integration Testing**: Comprehensive suite (`tests/test_integration_*.py`) verifying:
     - **Real DB**: Repository operations against PostgreSQL.
     - **Real SSH/Tmux**: Host connectivity, multi-session management, and output capturing.

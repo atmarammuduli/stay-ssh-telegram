@@ -1,5 +1,5 @@
 Metadata-Version: 2.4
-Name: stayssh-telegram
+Name: tmux_ssh_telegram-telegram
 Version: 0.1.0
 Summary: A robust SSH Telegram bot with tmux persistence and adaptive batching.
 Author: StaySSH Team

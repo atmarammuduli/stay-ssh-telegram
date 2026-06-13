@@ -1,7 +1,7 @@
 venv/
 *.log
 .env**
-.stayssh.pid
+.tmux_ssh_telegram.pid
 __pycache__/
 .pytest_cache/
 .coverage

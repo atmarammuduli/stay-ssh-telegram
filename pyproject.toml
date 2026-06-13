@@ -1,5 +1,5 @@
 [project]
-name = "stayssh-telegram"
+name = "stay-ssh-telegram"
 version = "0.1.0"
 description = "A robust SSH Telegram bot with tmux persistence and adaptive batching."
 authors = [{ name = "StaySSH Team" }]
@@ -39,7 +39,7 @@ target-version = ['py311']
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--cov=stayssh --cov-report=term-missing"
+addopts = "--cov=tmux_ssh_telegram --cov-report=term-missing"
 
 [tool.mypy]
 strict = true
@@ -47,4 +47,4 @@ ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
 
 [tool.setuptools]
-packages = ["stayssh", "stayssh.bot", "stayssh.core", "stayssh.db", "stayssh.ssh"]
+packages = ["tmux_ssh_telegram", "tmux_ssh_telegram.bot", "tmux_ssh_telegram.core", "tmux_ssh_telegram.db", "tmux_ssh_telegram.ssh"]

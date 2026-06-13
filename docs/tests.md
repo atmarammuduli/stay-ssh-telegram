@@ -2,18 +2,18 @@
 
 ## 1. Unit Test Suite (Target: 100% Branch Coverage)
 
-### 1.1 `stayssh.core.config`
+### 1.1 `tmux_ssh_telegram.core.config`
 - **T-CORE-01**: Verify settings are loaded from environment variables.
 - **T-CORE-02**: Verify settings are loaded from DB and cached.
 - **T-CORE-03**: Verify invalid setting types raise `InvalidConfigTypeError`.
 
-### 1.2 `stayssh.ssh.tmux` (Logic only - Mapped to `capture_diff`)
+### 1.2 `tmux_ssh_telegram.ssh.tmux` (Logic only - Mapped to `capture_diff`)
 - **T-SSH-01**: `capture_diff` returns empty string if line count hasn't changed.
 - **T-SSH-02**: `capture_diff` returns only new lines if line count increased.
 - **T-SSH-03**: `capture_diff` handles "pane cleared" scenario (line count reset).
 - **T-SSH-04**: Verify parsing of `tmux ls` output into `List[SessionDTO]`.
 
-### 1.3 `stayssh.bot.batcher` (Adaptive Batching)
+### 1.3 `tmux_ssh_telegram.bot.batcher` (Adaptive Batching)
 - **T-BOT-01**: **Property-Based Testing (Hypothesis)**: Generate random sequences of output bursts. Verify that:
     - No output is lost.
     - Telegram character limits (4096) are never exceeded (buffer splits correctly).

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from stayssh.db.connection import get_db
+from tmux_ssh_telegram.db.connection import get_db
 
 @pytest.mark.asyncio
 async def test_get_db_yields_session():
@@ -9,7 +9,7 @@ async def test_get_db_yields_session():
     mock_session.__aenter__.return_value = mock_session
     mock_factory = MagicMock(return_value=mock_session)
     
-    with patch("stayssh.db.connection.async_session_factory", mock_factory):
+    with patch("tmux_ssh_telegram.db.connection.async_session_factory", mock_factory):
         async for session in get_db():
             assert session == mock_session
         
@@ -23,7 +23,7 @@ async def test_get_db_rollbacks_on_error():
     mock_session.__aenter__.return_value = mock_session
     mock_factory = MagicMock(return_value=mock_session)
     
-    with patch("stayssh.db.connection.async_session_factory", mock_factory):
+    with patch("tmux_ssh_telegram.db.connection.async_session_factory", mock_factory):
         gen = get_db()
         await gen.__anext__()
         try:

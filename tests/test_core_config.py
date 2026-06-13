@@ -1,7 +1,7 @@
 import os
 from unittest.mock import patch
 import pytest
-from stayssh.core.config import Settings
+from tmux_ssh_telegram.core.config import Settings
 
 def test_settings_load_from_env():
     """Verify settings are loaded from environment variables."""

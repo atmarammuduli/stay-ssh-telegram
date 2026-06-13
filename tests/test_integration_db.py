@@ -2,9 +2,9 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from stayssh.db.models import Base, User, Session
-from stayssh.db.repositories import UserRepository, SessionRepository
-from stayssh.core.config import settings
+from tmux_ssh_telegram.db.models import Base, User, Session
+from tmux_ssh_telegram.db.repositories import UserRepository, SessionRepository
+from tmux_ssh_telegram.core.config import settings
 import os
 
 # Integration tests require a running database.

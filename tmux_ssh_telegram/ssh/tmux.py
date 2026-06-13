@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
-from stayssh.ssh.manager import SSHManager
-from stayssh.core.models import TmuxOutputDTO
+from tmux_ssh_telegram.ssh.manager import SSHManager
+from tmux_ssh_telegram.core.models import TmuxOutputDTO
 
 logger = logging.getLogger(__name__)
 

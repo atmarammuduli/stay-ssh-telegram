@@ -2,8 +2,8 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, patch
 from datetime import datetime, timedelta
-from stayssh.bot.batcher import AdaptiveBatcher
-from stayssh.core.config import settings
+from tmux_ssh_telegram.bot.batcher import AdaptiveBatcher
+from tmux_ssh_telegram.core.config import settings
 
 @pytest.fixture
 def mock_send():

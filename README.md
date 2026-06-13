@@ -21,8 +21,8 @@ A robust, production-ready SSH Telegram bot that provides a secure gateway to yo
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/youruser/stayssh-telegram.git
-cd stayssh-telegram
+git clone https://github.com/youruser/tmux_ssh_telegram-telegram.git
+cd tmux_ssh_telegram-telegram
 # The run script handles venv creation automatically
 ./scripts/run_local.sh --test
 ```
@@ -33,7 +33,7 @@ Copy `.env.example` to `.env` and fill in your details:
 -   `ADMIN_USER_ID`: Your numeric Telegram ID.
 -   `HOST_SSH_URL`: `ssh://user@ip:port`
 -   `SSH_KEY_PATH`: Absolute path to your private key.
--   `DATABASE_URL`: `postgresql+asyncpg://user:pass@localhost:5432/stayssh`
+-   `DATABASE_URL`: `postgresql+asyncpg://user:pass@localhost:5432/tmux_ssh_telegram`
 
 ### 3. Run (Local)
 ```bash
@@ -42,24 +42,22 @@ Copy `.env.example` to `.env` and fill in your details:
 ```
 
 ### 4. Run (Docker)
-Ensure you have Docker and Docker Compose installed. The bot is configured to use an **external database** (either on the host or a remote server).
+Ensure you have Docker and Docker Compose installed.
+
+1.  **Deploy using the script**:
+    We provide a robust deployment script that handles environment setup and naming consistency.
+    ```bash
+    chmod +x deploy.sh
+    ./deploy.sh
+    ```
 
 2.  **Configure `.env` for Docker**:
     If your database is running on the local host (outside Docker), update your `DATABASE_URL` to use `host.docker.internal` instead of `localhost`. 
     
     Also, ensure your `SSH_KEY_PATH` points to the **internal container path**. Since `./keys` is mapped to `/app/keys`, your `.env` should look like this:
     ```env
-    DATABASE_URL=postgresql+asyncpg://user:pass@host.docker.internal:5432/stayssh
+    DATABASE_URL=postgresql+asyncpg://user:pass@host.docker.internal:5432/tmux_ssh_telegram
     SSH_KEY_PATH=/app/keys/your_key_file
-    ```
-
-3.  **Start the Bot**:
-    ```bash
-    # Build and start services
-    docker-compose up -d --build
-
-    # Initialize Database (first time only)
-    docker-compose exec bot python -m stayssh.db.init_db
     ```
 
 ---
@@ -106,8 +104,8 @@ We maintain **100% Statement Coverage** for core logic.
 
 ## 📂 Project Structure
 
--   `stayssh/bot/`: Telegram handlers and message batching logic.
--   `stayssh/ssh/`: SSH connectivity and tmux orchestration.
--   `stayssh/db/`: Async SQLAlchemy models and repositories.
+-   `tmux_ssh_telegram/bot/`: Telegram handlers and message batching logic.
+-   `tmux_ssh_telegram/ssh/`: SSH connectivity and tmux orchestration.
+-   `tmux_ssh_telegram/db/`: Async SQLAlchemy models and repositories.
 -   `docs/`: Detailed technical specifications and handoff docs.
 -   `scripts/`: Management and lifecycle utilities.

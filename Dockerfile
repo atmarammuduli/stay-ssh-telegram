@@ -17,16 +17,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Install dependencies and package
 COPY pyproject.toml .
+COPY tmux_ssh_telegram ./tmux_ssh_telegram
 RUN pip install --upgrade pip
 RUN pip install .
 
-# Copy project
+# Copy remaining project files (tests, docs, etc.)
 COPY . .
 
 # Create logs directory
 RUN mkdir -p /app/logs
 
+# Copy entrypoint
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
 # Run the bot
-CMD ["python", "-m", "stayssh.bot.main"]
+ENTRYPOINT ["./entrypoint.sh"]

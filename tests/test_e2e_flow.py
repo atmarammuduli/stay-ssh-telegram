@@ -7,13 +7,13 @@ from sqlalchemy import text
 from telegram import Update, Message, User as TGUser, constants
 from telegram.ext import ContextTypes
 
-from stayssh.ssh.manager import SSHManager
-from stayssh.ssh.tmux import TmuxManager
-from stayssh.db.connection import engine, async_session_factory
-from stayssh.db.models import Base
-from stayssh.db.repositories import SessionRepository, UserRepository, SettingRepository
-from stayssh.core.config import settings
-from stayssh.bot.main import (
+from tmux_ssh_telegram.ssh.manager import SSHManager
+from tmux_ssh_telegram.ssh.tmux import TmuxManager
+from tmux_ssh_telegram.db.connection import engine, async_session_factory
+from tmux_ssh_telegram.db.models import Base
+from tmux_ssh_telegram.db.repositories import SessionRepository, UserRepository, SettingRepository
+from tmux_ssh_telegram.core.config import settings
+from tmux_ssh_telegram.bot.main import (
     start, list_sessions, create_session, switch_session, 
     kill_session, show_log, manage_config, handle_command,
     send_key, type_text

@@ -1,7 +1,7 @@
 import logging
-from stayssh.db.repositories import SessionRepository
-from stayssh.ssh.tmux import TmuxManager
-from stayssh.core.models import SessionStatus
+from tmux_ssh_telegram.db.repositories import SessionRepository
+from tmux_ssh_telegram.ssh.tmux import TmuxManager
+from tmux_ssh_telegram.core.models import SessionStatus
 
 logger = logging.getLogger(__name__)
 

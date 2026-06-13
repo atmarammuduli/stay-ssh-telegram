@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from stayssh.bot.sync import SyncService
-from stayssh.core.models import SessionDTO, SessionStatus
+from tmux_ssh_telegram.bot.sync import SyncService
+from tmux_ssh_telegram.core.models import SessionDTO, SessionStatus
 from datetime import datetime
 
 @pytest.fixture

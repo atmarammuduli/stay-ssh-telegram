@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
-from stayssh.db.repositories import SessionRepository, UserRepository, SettingRepository
-from stayssh.db.models import User, Session, Setting
-from stayssh.core.models import SessionStatus
+from tmux_ssh_telegram.db.repositories import SessionRepository, UserRepository, SettingRepository
+from tmux_ssh_telegram.db.models import User, Session, Setting
+from tmux_ssh_telegram.core.models import SessionStatus
 from datetime import datetime
 
 @pytest.fixture

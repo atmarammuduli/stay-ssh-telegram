@@ -1,6 +1,6 @@
 import asyncio
 import asyncpg
-from stayssh.core.config import settings
+from tmux_ssh_telegram.core.config import settings
 from sqlalchemy import make_url
 
 async def create_db():

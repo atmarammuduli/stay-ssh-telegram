@@ -1,18 +1,18 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 import asyncssh
-from stayssh.ssh.manager import SSHManager
-from stayssh.core.config import settings
+from tmux_ssh_telegram.ssh.manager import SSHManager
+from tmux_ssh_telegram.core.config import settings
 
 @pytest.fixture
 def ssh_manager():
-    with patch("stayssh.ssh.manager.settings") as mock_settings:
+    with patch("tmux_ssh_telegram.ssh.manager.settings") as mock_settings:
         mock_settings.HOST_SSH_URL = "ssh://testuser@testhost:2222"
         mock_settings.SSH_KEY_PATH = "test_key"
         return SSHManager()
 
 def test_parse_url_no_ssh_prefix(ssh_manager):
-    with patch("stayssh.ssh.manager.settings") as mock_settings:
+    with patch("tmux_ssh_telegram.ssh.manager.settings") as mock_settings:
         mock_settings.HOST_SSH_URL = "testuser@testhost"
         mgr = SSHManager()
         assert mgr.username == "testuser"
@@ -20,7 +20,7 @@ def test_parse_url_no_ssh_prefix(ssh_manager):
         assert mgr.port == 22
 
 def test_parse_url_no_user(ssh_manager):
-    with patch("stayssh.ssh.manager.settings") as mock_settings:
+    with patch("tmux_ssh_telegram.ssh.manager.settings") as mock_settings:
         mock_settings.HOST_SSH_URL = "testhost"
         mgr = SSHManager()
         assert mgr.username == ""

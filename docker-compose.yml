@@ -1,7 +1,7 @@
 services:
   bot:
     build: .
-    container_name: stayssh-bot
+    container_name: stay-ssh-telegram-bot
     restart: unless-stopped
     env_file:
       - .env

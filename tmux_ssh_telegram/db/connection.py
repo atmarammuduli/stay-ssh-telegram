@@ -1,6 +1,6 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from stayssh.core.config import settings
+from tmux_ssh_telegram.core.config import settings
 
 # Create async engine
 engine = create_async_engine(

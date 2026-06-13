@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from stayssh.db.connection import engine
-from stayssh.db.models import Base
+from tmux_ssh_telegram.db.connection import engine
+from tmux_ssh_telegram.db.models import Base
 
 logger = logging.getLogger(__name__)
 

@@ -13,13 +13,13 @@ To ensure high modularity, the following dependency rules apply:
 ## 2. Data Transfer Objects (DTOs) - The Shared Language
 These Pydantic models define the *only* way data crosses module boundaries.
 
-### `stayssh.core.models.SessionDTO`
+### `tmux_ssh_telegram.core.models.SessionDTO`
 - `id: int`, `name: str`, `status: SessionStatus`, `last_activity: datetime`.
 
-### `stayssh.core.models.TmuxOutputDTO`
+### `tmux_ssh_telegram.core.models.TmuxOutputDTO`
 - `session_name: str`, `content: str`, `line_count: int`, `is_truncated: bool`.
 
-### `stayssh.core.models.CommandResultDTO`
+### `tmux_ssh_telegram.core.models.CommandResultDTO`
 - `exit_code: int`, `stdout: str`, `stderr: str`, `duration: float`.
 
 ---

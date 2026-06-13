@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from stayssh.ssh.tmux import TmuxManager
-from stayssh.core.models import CommandResultDTO
+from tmux_ssh_telegram.ssh.tmux import TmuxManager
+from tmux_ssh_telegram.core.models import CommandResultDTO
 
 @pytest.fixture
 def mock_ssh():

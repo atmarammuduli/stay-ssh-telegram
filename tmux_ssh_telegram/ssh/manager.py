@@ -2,8 +2,8 @@ import asyncio
 import logging
 from typing import Optional, Tuple
 import asyncssh
-from stayssh.core.config import settings
-from stayssh.core.models import CommandResultDTO
+from tmux_ssh_telegram.core.config import settings
+from tmux_ssh_telegram.core.models import CommandResultDTO
 
 logger = logging.getLogger(__name__)
 

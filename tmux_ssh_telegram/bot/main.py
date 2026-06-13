@@ -5,19 +5,19 @@ from logging.handlers import RotatingFileHandler
 from telegram import Update, constants
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-from stayssh.core.config import settings
-from stayssh.core.models import SessionStatus
-from stayssh.db.connection import async_session_factory
-from stayssh.db.repositories import SessionRepository, UserRepository, SettingRepository
-from stayssh.ssh.manager import SSHManager
-from stayssh.ssh.tmux import TmuxManager
-from stayssh.bot.sync import SyncService
-from stayssh.bot.batcher import AdaptiveBatcher
+from tmux_ssh_telegram.core.config import settings
+from tmux_ssh_telegram.core.models import SessionStatus
+from tmux_ssh_telegram.db.connection import async_session_factory
+from tmux_ssh_telegram.db.repositories import SessionRepository, UserRepository, SettingRepository
+from tmux_ssh_telegram.ssh.manager import SSHManager
+from tmux_ssh_telegram.ssh.tmux import TmuxManager
+from tmux_ssh_telegram.bot.sync import SyncService
+from tmux_ssh_telegram.bot.batcher import AdaptiveBatcher
 
 # Logging Setup
 def setup_logging() -> None:
     os.makedirs(settings.LOG_DIR, exist_ok=True)
-    log_file = os.path.join(settings.LOG_DIR, "stayssh.log")
+    log_file = os.path.join(settings.LOG_DIR, "tmux_ssh_telegram.log")
     
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
@@ -87,7 +87,7 @@ async def send_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
             
         from sqlalchemy import select
-        from stayssh.db.models import Session
+        from tmux_ssh_telegram.db.models import Session
         stmt = select(Session.name).where(Session.id == user_data.active_session_id)
         result = await db.execute(stmt)
         session_name = result.scalar_one_or_none()
@@ -111,7 +111,7 @@ async def type_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
             
         from sqlalchemy import select
-        from stayssh.db.models import Session
+        from tmux_ssh_telegram.db.models import Session
         stmt = select(Session.name).where(Session.id == user_data.active_session_id)
         result = await db.execute(stmt)
         session_name = result.scalar_one_or_none()
@@ -219,7 +219,7 @@ async def show_log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
         
         from sqlalchemy import select
-        from stayssh.db.models import Session
+        from tmux_ssh_telegram.db.models import Session
         stmt = select(Session.name).where(Session.id == user_data.active_session_id)
         result = await db.execute(stmt)
         session_name = result.scalar_one_or_none()
@@ -304,7 +304,7 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             return
         
         from sqlalchemy import select
-        from stayssh.db.models import Session
+        from tmux_ssh_telegram.db.models import Session
         stmt = select(Session.name).where(Session.id == user_data.active_session_id)
         result = await db.execute(stmt)
         session_name = result.scalar_one_or_none()

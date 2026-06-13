@@ -4,12 +4,12 @@ import os
 import asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from stayssh.db.models import Base
-from stayssh.db.repositories import UserRepository, SessionRepository, SettingRepository
-from stayssh.ssh.manager import SSHManager
-from stayssh.ssh.tmux import TmuxManager
-from stayssh.bot.sync import SyncService
-from stayssh.core.config import settings
+from tmux_ssh_telegram.db.models import Base
+from tmux_ssh_telegram.db.repositories import UserRepository, SessionRepository, SettingRepository
+from tmux_ssh_telegram.ssh.manager import SSHManager
+from tmux_ssh_telegram.ssh.tmux import TmuxManager
+from tmux_ssh_telegram.bot.sync import SyncService
+from tmux_ssh_telegram.core.config import settings
 
 # Integration tests require a running database and SSH host.
 DATABASE_URL = os.getenv("DATABASE_URL", settings.DATABASE_URL)
@@ -107,7 +107,7 @@ class TestSystemIntegration:
         from telegram import Update, Message, User as TGUser
         from telegram.ext import ContextTypes
         from unittest.mock import MagicMock, AsyncMock
-        from stayssh.bot.main import create_session, handle_command
+        from tmux_ssh_telegram.bot.main import create_session, handle_command
         
         # 1. Setup Mock Update & Context
         mock_update = MagicMock(spec=Update)

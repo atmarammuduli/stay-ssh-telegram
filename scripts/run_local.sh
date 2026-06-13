@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-PID_FILE=".stayssh.pid"
+PID_FILE=".tmux_ssh_telegram.pid"
 VENV_DIR="venv"
 COVERAGE_THRESHOLD=100
 
@@ -31,10 +31,10 @@ stop_bot() {
     fi
     
     # 2. Try pkill as first fallback
-    pkill -9 -f "stayssh.bot.main" 2>/dev/null || true
+    pkill -9 -f "tmux_ssh_telegram.bot.main" 2>/dev/null || true
     
     # 3. Final aggressive sweep using ps/grep/awk
-    PIDS=$(ps aux | grep "stayssh.bot.main" | grep -v grep | awk '{print $2}')
+    PIDS=$(ps aux | grep "tmux_ssh_telegram.bot.main" | grep -v grep | awk '{print $2}')
     if [ ! -z "$PIDS" ]; then
         echo "🛑 Killing lingering bot processes: $PIDS"
         echo "$PIDS" | xargs kill -9 2>/dev/null || true
@@ -102,7 +102,7 @@ pip install --quiet -e ".[dev]"
 # Run Tests if requested
 if [ "$RUN_TESTS" = true ]; then
     echo "🧪 Running Unit Tests with Coverage Gate (${COVERAGE_THRESHOLD}%)..."
-    pytest --cov=stayssh --cov-report=term-missing --cov-fail-under=$COVERAGE_THRESHOLD \
+    pytest --cov=tmux_ssh_telegram --cov-report=term-missing --cov-fail-under=$COVERAGE_THRESHOLD \
         tests/test_bot_batcher.py tests/test_bot_main.py tests/test_bot_sync.py tests/test_core_config.py \
         tests/test_db_connection.py tests/test_db_repositories.py tests/test_ssh_manager.py tests/test_ssh_tmux.py
     
@@ -143,11 +143,11 @@ echo "🔄 Creating Database (if not exists)..."
 python -m scripts.create_db
 
 echo "🔄 Initializing Database Tables..."
-python -m stayssh.db.init_db
+python -m tmux_ssh_telegram.db.init_db
 
 # Run the bot and save PID
 echo "🤖 Starting StaySSH Bot..."
-python -m stayssh.bot.main &
+python -m tmux_ssh_telegram.bot.main &
 echo $! > "$PID_FILE"
 echo "✅ Bot started with PID: $(cat $PID_FILE)"
 echo "📝 Logs will appear in the console. Press Ctrl+C to stop (note: background process remains, use --stop to kill)."
