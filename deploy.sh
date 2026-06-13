@@ -22,6 +22,19 @@ if [ ! -f "pyproject.toml" ]; then
     exit 1
 fi
 
+# Detect Docker Compose command
+if docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif docker-compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    echo -e "${RED}❌ Error: Neither 'docker compose' (V2) nor 'docker-compose' (V1) was found.${NC}"
+    echo -e "${YELLOW}Please install Docker Compose before running this script.${NC}"
+    exit 1
+fi
+
+echo -e "${BLUE}ℹ️ Using '$DOCKER_COMPOSE' for deployment.${NC}"
+
 # 1. Ask to fetch latest from git
 read -p "❓ Fetch latest code from git? (y/N): " FETCH_GIT
 if [[ "$FETCH_GIT" =~ ^[Yy]$ ]]; then
@@ -89,7 +102,7 @@ fi
 read -p "❓ Build the Docker image? (y/N): " BUILD_IMAGE
 if [[ "$BUILD_IMAGE" =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}🐳 Building Docker image...${NC}"
-    docker-compose build --no-cache
+    $DOCKER_COMPOSE build --no-cache
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Build failed!${NC}"
         exit 1
@@ -104,20 +117,20 @@ if [[ "$DEPLOY_BOT" =~ ^[Yy]$ ]]; then
     
     # Stop existing container if running
     echo -e "${YELLOW}🛑 Stopping existing container (if any)...${NC}"
-    docker-compose down || true
+    $DOCKER_COMPOSE down || true
     
     # Start up
     echo -e "${GREEN}🆙 Starting containers...${NC}"
-    docker-compose up -d
+    $DOCKER_COMPOSE up -d
     
     # Initialize DB
     echo -e "${GREEN}🔄 Initializing database...${NC}"
-    docker-compose exec -T bot python -m tmux_ssh_telegram.db.init_db || echo -e "${YELLOW}⚠️ DB init might have failed or skipped.${NC}"
+    $DOCKER_COMPOSE exec -T bot python -m tmux_ssh_telegram.db.init_db || echo -e "${YELLOW}⚠️ DB init might have failed or skipped.${NC}"
     
     echo -e "${GREEN}✅ Deployment complete! Showing logs...${NC}"
     echo -e "${BLUE}Press Ctrl+C to exit logs (bot will continue running).${NC}"
     sleep 2
-    docker-compose logs -f
+    $DOCKER_COMPOSE logs -f
 else
     echo -e "${YELLOW}⏩ Skipping deployment.${NC}"
 fi

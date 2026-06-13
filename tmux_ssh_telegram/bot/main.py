@@ -44,6 +44,22 @@ ssh_manager = SSHManager()
 tmux_manager = TmuxManager(ssh_manager)
 batcher: AdaptiveBatcher = None
 
+HELP_TEXT = (
+    "👋 Welcome to <b>StaySSH</b>!\n\n"
+    "Available commands:\n"
+    "/new &lt;name&gt; - Create a new session\n"
+    "/sessions - List host sessions\n"
+    "/switch &lt;name&gt; - Switch active session\n"
+    "/kill &lt;name&gt; - Kill a session\n"
+    "/log &lt;n&gt; - Show last N lines\n"
+    "/key &lt;k&gt; - Send special key (e.g. Escape, C-c)\n"
+    "/type &lt;t&gt; - Type text without Enter\n"
+    "/config - View/Set bot settings\n"
+    "/status - Show current session info\n"
+    "/restart - Restart the bot\n\n"
+    "Send any text to execute it in the active session."
+)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles the /start command."""
     user = update.effective_user
@@ -56,18 +72,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await user_repo.get_or_create(user.id, is_admin=True)
         await db.commit()
 
+    await update.message.reply_text(HELP_TEXT, parse_mode=constants.ParseMode.HTML)
+
+async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles unrecognized commands."""
+    if update.effective_user.id != settings.ADMIN_USER_ID: return
+    
     await update.message.reply_text(
-        "👋 Welcome to <b>StaySSH</b>!\n\n"
-        "Available commands:\n"
-        "/new <name> - Create a new session\n"
-        "/sessions - List host sessions\n"
-        "/switch <name> - Switch active session\n"
-        "/kill <name> - Kill a session\n"
-        "/log <n> - Show last N lines\n"
-        "/key <k> - Send special key (e.g. Escape, C-c)\n"
-        "/type <t> - Type text without Enter\n"
-        "/status - Show current session info\n\n"
-        "Send any text to execute it in the active session.",
+        "❓ <b>Unrecognized command.</b>\n\n" + HELP_TEXT,
         parse_mode=constants.ParseMode.HTML
     )
 
@@ -397,6 +409,10 @@ def main() -> None:
     application.add_handler(CommandHandler("type", type_text))
     application.add_handler(CommandHandler("config", manage_config))
     application.add_handler(CommandHandler("restart", restart_bot))
+    
+    # Handle unknown commands
+    application.add_handler(MessageHandler(filters.COMMAND, unknown_command))
+    
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_command))
 
     logger.info("StaySSH Bot is starting...")
