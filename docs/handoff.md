@@ -1,15 +1,16 @@
 # StaySSH Project Handoff
 
 ## 📌 Project Status
-- **Phase**: Implementation & Testing Complete (100% Coverage Reached)
-- **Current State**: Core bot functionality, database integration, SSH/Tmux management, and interactive terminal support are all fully implemented and verified.
-- **Next Steps**: Deployment optimization, UI polish (Telegram buttons), and multi-user support (beyond single admin).
+- **Phase**: Deployment & UI Optimization Complete
+- **Current State**: Core functionality, robust interactive deployment (`deploy.sh`), and polished UI (inline buttons, screenshots, aliases) are all fully implemented and verified on VPS.
+- **Next Steps**: Multi-user support (beyond single admin), automated VPS health monitoring.
 
 ## ✨ Key Features Implemented
-- **Interactive Terminal Support**: `/key` and `/type` commands allow operating interactive apps like `vim`, `nano`, or `gemini-cli`.
-- **Automatic Provisioning**: Bot automatically detects if `tmux` is missing on the host and attempts to install it via standard package managers.
+- **Interactive Terminal Support**: `/key` and `/type` commands with short aliases (`/ky`, `/t`) for operating apps like `vim`, `nano`, or `gemini-cli`.
+- **UI & Efficiency**: Interactive inline buttons for session management and one/two-letter command aliases for rapid mobile usage.
+- **Terminal Snapshots**: `/screenshot` (`/ss`) command captures full-screen state, preserving footers and status bars.
+- **Robust Deployment**: Interactive `deploy.sh` script with git reset options and absolute immunity for `.env` and key files.
 - **Adaptive Batching**: Efficiently bundles terminal output to avoid Telegram rate limits while maintaining responsiveness.
-- **Startup Sync**: Automatically synchronizes existing host `tmux` sessions with the local database upon bot startup.
 
 ## 🧪 Testing & Quality Assurance
 - **Unit Testing**: **100% Statement Coverage** achieved across all modules in the `tmux_ssh_telegram` package.

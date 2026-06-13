@@ -1,0 +1,23 @@
+Metadata-Version: 2.4
+Name: stay-ssh-telegram
+Version: 0.1.0
+Summary: A robust SSH Telegram bot with tmux persistence and adaptive batching.
+Author: StaySSH Team
+Requires-Dist: python-telegram-bot[job-queue]>=20.0
+Requires-Dist: asyncssh>=2.13.0
+Requires-Dist: sqlalchemy[asyncio]>=2.0.0
+Requires-Dist: asyncpg>=0.28.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: alembic>=1.11.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: hypothesis>=6.80.0; extra == "dev"
+Requires-Dist: mypy>=1.4.0; extra == "dev"
+Requires-Dist: ruff>=0.0.280; extra == "dev"
+Requires-Dist: black>=23.7.0; extra == "dev"
+Requires-Dist: safety>=2.3.0; extra == "dev"
+Requires-Dist: xenon>=0.9.0; extra == "dev"

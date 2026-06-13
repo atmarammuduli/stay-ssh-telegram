@@ -8,8 +8,8 @@
 | **Infrastructure & CI** | Scaffolding, `run_local.sh`, Static analysis setup. | ✅ COMPLETE |
 | **Core Engine & Persistence**| Contract-first implementation of SSH, Tmux, and DB. | ✅ COMPLETE |
 | **Telegram & Adaptive Batching** | Adaptive logic and UI/UX with strict state machines. | ✅ COMPLETE |
-| **Testing (100% Cov)** | Unit, Property, Stress, and E2E tests. | 🚧 IN PROGRESS |
-| **Deployment** | `Dockerfile`, Docker Compose, and `deploy.sh`. | ⏳ PENDING |
+| **Testing (100% Cov)** | Unit, Property, Stress, and E2E tests. | ✅ COMPLETE |
+| **Deployment & UI Polish** | `deploy.sh`, Inline Buttons, Screenshots, Aliases. | ✅ COMPLETE |
 
 ---
 

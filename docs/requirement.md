@@ -37,10 +37,16 @@ A Docker-deployable Telegram bot that serves as a robust SSH gateway to a **host
     - Optional: Docker socket mount for self-restart capability.
 
 ## User Interface (Telegram)
-- `/new <name>`: Start a new named session on the host.
-- `/sessions`: List all available host tmux sessions.
-- `/attach <name>`: Attach the bot's monitor to an existing host session.
-- `/switch <id>`: Switch the current active context.
-- `/config`: View and modify bot settings on the fly.
-- `/restart`: Force a bot container restart.
-- `<Any Text>`: Sent as a command to the active session.
+StaySSH supports short aliases for all commands for efficient CLI-like usage on mobile.
+
+- `/new` | `/n <name>`: Start a new named session on the host and select it.
+- `/sessions` | `/ls`: List all active host sessions with **interactive buttons**.
+- `/switch` | `/sw <name>`: Switch the current bot context to a specific session.
+- `/screenshot` | `/ss`: Capture a full-screen snapshot of the active terminal.
+- `/status` | `/s`: Show connection details and active session info.
+- `/log` | `/l <n>`: View the last N lines of terminal history.
+- `/key` | `/ky <key>`: Send special keys (Escape, C-c, Tab).
+- `/type` | `/t <text>`: Type text without sending a newline/Enter.
+- `/config` | `/c`: View and modify bot settings on the fly.
+- `/restart` | `/r`: Force a bot container restart.
+- `<Any Text>`: Sent as a command + Enter to the active session.

@@ -57,17 +57,25 @@ if [[ "$FETCH_GIT" =~ ^[Yy]$ ]]; then
 
     # Ask for update method
     echo -e "❓ Choose update method:"
-    echo -e "  [r] Reset (Hard reset to origin, clean untracked files except .gitignore) - DEFAULT"
+    echo -e "  [r] Reset (Hard reset to origin, keep ignored files) - DEFAULT"
     echo -e "  [p] Pull (Merge updates, keep local changes)"
     read -p "👉 Selection [r/p]: " UPDATE_METHOD
     
-    # If empty or 'y'/'yes' or 'r', use 'r'
+    # Handle logic for 'r' being the default for 'y', 'yes', or empty
     if [[ -z "$UPDATE_METHOD" || "$UPDATE_METHOD" =~ ^[Yy]([Ee][Ss])?$ || "$UPDATE_METHOD" == "r" ]]; then
         echo -e "${RED}⚠️ Performing hard reset to origin/$TARGET_BRANCH...${NC}"
         git reset --hard origin/$TARGET_BRANCH
-        # git clean -fd preserves files in .gitignore by default
-        git clean -fd
-        echo -e "${GREEN}✅ Branch reset and cleaned (ignored files like .env preserved).${NC}"
+
+        # Optional Clean step
+        read -p "❓ Also remove other untracked files? (y/N) [Note: .gitignore files are always safe]: " CLEAN_REQ
+        if [[ "$CLEAN_REQ" =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}🧹 Cleaning untracked files...${NC}"
+            git clean -fd
+            echo -e "${GREEN}✅ Branch reset and untracked files cleaned.${NC}"
+        else
+            echo -e "${GREEN}✅ Branch reset. Untracked files were kept.${NC}"
+        fi
+        echo -e "${BLUE}ℹ️ Files in .gitignore (.env, keys/, etc.) were NOT touched.${NC}"
     else
         echo -e "${YELLOW}🔄 Pulling updates from origin/$TARGET_BRANCH...${NC}"
         git pull origin $TARGET_BRANCH
@@ -89,7 +97,6 @@ if [ ! -f .env ]; then
 fi
 
 # 3. Fix potential naming issues
-# The codebase expects the package folder to be 'tmux_ssh_telegram'
 if [ ! -d "tmux_ssh_telegram" ]; then
     echo -e "${YELLOW}🔍 'tmux_ssh_telegram' directory not found.${NC}"
     POTENTIAL_DIR=$(ls -d */ | grep -E "stay[-_]ssh|telegram" | grep -v "venv" | grep -v "tests" | grep -v "docs" | head -n 1 | sed 's/\///')
@@ -120,19 +127,10 @@ fi
 read -p "❓ Deploy the bot now? (y/N): " DEPLOY_BOT
 if [[ "$DEPLOY_BOT" =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}🚀 Deploying...${NC}"
-    
-    # Stop existing container if running
-    echo -e "${YELLOW}🛑 Stopping existing container (if any)...${NC}"
     $DOCKER_COMPOSE down || true
-    
-    # Start up
-    echo -e "${GREEN}🆙 Starting containers...${NC}"
     $DOCKER_COMPOSE up -d
-    
-    # Initialize DB
     echo -e "${GREEN}🔄 Initializing database...${NC}"
     $DOCKER_COMPOSE exec -T bot python -m tmux_ssh_telegram.db.init_db || echo -e "${YELLOW}⚠️ DB init might have failed or skipped.${NC}"
-    
     echo -e "${GREEN}✅ Deployment complete! Showing logs...${NC}"
     echo -e "${BLUE}Press Ctrl+C to exit logs (bot will continue running).${NC}"
     sleep 2
