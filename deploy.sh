@@ -47,25 +47,31 @@ if [[ "$FETCH_GIT" =~ ^[Yy]$ ]]; then
     
     # Ask for branch
     read -p "❓ Which branch to deploy? [default: main]: " TARGET_BRANCH
-    TARGET_BRANCH=${TARGET_BRANCH:-main}
-    
-    # Backup .env
-    if [ -f .env ]; then
-        cp .env .env.bak
-        echo -e "${BLUE}💾 Backed up .env to .env.bak${NC}"
+    # If empty or 'y'/'yes', use main
+    if [[ -z "$TARGET_BRANCH" || "$TARGET_BRANCH" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+        TARGET_BRANCH="main"
     fi
     
-    echo -e "${YELLOW}📍 Checking out and resetting to origin/$TARGET_BRANCH...${NC}"
-    
-    # Perform clean checkout
+    echo -e "${YELLOW}📍 Switching to branch: $TARGET_BRANCH...${NC}"
     git checkout $TARGET_BRANCH || git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH
-    git reset --hard origin/$TARGET_BRANCH
-    git clean -fd
+
+    # Ask for update method
+    echo -e "❓ Choose update method:"
+    echo -e "  [r] Reset (Hard reset to origin, clean untracked files except .gitignore) - DEFAULT"
+    echo -e "  [p] Pull (Merge updates, keep local changes)"
+    read -p "👉 Selection [r/p]: " UPDATE_METHOD
     
-    # Restore .env
-    if [ -f .env.bak ]; then
-        mv .env.bak .env
-        echo -e "${BLUE}✅ Restored .env from backup.${NC}"
+    # If empty or 'y'/'yes' or 'r', use 'r'
+    if [[ -z "$UPDATE_METHOD" || "$UPDATE_METHOD" =~ ^[Yy]([Ee][Ss])?$ || "$UPDATE_METHOD" == "r" ]]; then
+        echo -e "${RED}⚠️ Performing hard reset to origin/$TARGET_BRANCH...${NC}"
+        git reset --hard origin/$TARGET_BRANCH
+        # git clean -fd preserves files in .gitignore by default
+        git clean -fd
+        echo -e "${GREEN}✅ Branch reset and cleaned (ignored files like .env preserved).${NC}"
+    else
+        echo -e "${YELLOW}🔄 Pulling updates from origin/$TARGET_BRANCH...${NC}"
+        git pull origin $TARGET_BRANCH
+        echo -e "${GREEN}✅ Pulled latest changes.${NC}"
     fi
 fi
 
