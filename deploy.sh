@@ -25,7 +25,16 @@ fi
 # 1. Ask to fetch latest from git
 read -p "❓ Fetch latest code from git? (y/N): " FETCH_GIT
 if [[ "$FETCH_GIT" =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}🔄 Fetching latest code...${NC}"
+    echo -e "${YELLOW}🔄 Fetching remote branches...${NC}"
+    git fetch origin --prune
+    
+    # List available remote branches (cleaned up)
+    echo -e "${BLUE}Available branches:${NC}"
+    git branch -r | grep -v "origin/HEAD" | sed 's/origin\///' | awk '{print "  - "$1}'
+    
+    # Ask for branch
+    read -p "❓ Which branch to deploy? [default: main]: " TARGET_BRANCH
+    TARGET_BRANCH=${TARGET_BRANCH:-main}
     
     # Backup .env
     if [ -f .env ]; then
@@ -33,11 +42,11 @@ if [[ "$FETCH_GIT" =~ ^[Yy]$ ]]; then
         echo -e "${BLUE}💾 Backed up .env to .env.bak${NC}"
     fi
     
-    # Clean checkout
-    git fetch origin
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    echo -e "${YELLOW}📍 Current branch: $CURRENT_BRANCH. Performing hard reset to origin/$CURRENT_BRANCH...${NC}"
-    git reset --hard origin/$CURRENT_BRANCH
+    echo -e "${YELLOW}📍 Checking out and resetting to origin/$TARGET_BRANCH...${NC}"
+    
+    # Perform clean checkout
+    git checkout $TARGET_BRANCH || git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH
+    git reset --hard origin/$TARGET_BRANCH
     git clean -fd
     
     # Restore .env
