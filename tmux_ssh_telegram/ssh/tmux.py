@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from tmux_ssh_telegram.ssh.manager import SSHManager
 from tmux_ssh_telegram.core.models import TmuxOutputDTO
 
