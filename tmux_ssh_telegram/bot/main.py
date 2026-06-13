@@ -2,8 +2,8 @@ import os
 import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
-from telegram import Update, constants
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 
 from tmux_ssh_telegram.core.config import settings
 from tmux_ssh_telegram.core.models import SessionStatus
@@ -45,19 +45,25 @@ tmux_manager = TmuxManager(ssh_manager)
 batcher: AdaptiveBatcher = None
 
 HELP_TEXT = (
-    "👋 Welcome to <b>StaySSH</b>!\n\n"
-    "Available commands:\n"
-    "/new &lt;name&gt; - Create a new session\n"
-    "/sessions - List host sessions\n"
-    "/switch &lt;name&gt; - Switch active session\n"
-    "/kill &lt;name&gt; - Kill a session\n"
-    "/log &lt;n&gt; - Show last N lines\n"
-    "/key &lt;k&gt; - Send special key (e.g. Escape, C-c)\n"
-    "/type &lt;t&gt; - Type text without Enter\n"
-    "/config - View/Set bot settings\n"
-    "/status - Show current session info\n"
-    "/restart - Restart the bot\n\n"
-    "Send any text to execute it in the active session."
+    "👋 <b>StaySSH Bot Help</b>\n\n"
+    "<b>Core Commands:</b>\n"
+    "• /new &lt;name&gt; - Create &amp; select a new tmux session\n"
+    "• /sessions - List all active sessions on host\n"
+    "• /switch &lt;name&gt; - Switch bot context to a session\n"
+    "• /kill &lt;name&gt; - Force kill a session &amp; its processes\n"
+    "• /status - Show active session &amp; connection info\n\n"
+    "<b>Terminal Interaction:</b>\n"
+    "• <code>&lt;Any Text&gt;</code> - Sends text + Enter (C-m)\n"
+    "• /type &lt;text&gt; - Sends raw text <b>without</b> Enter (useful for passwords or partial commands)\n"
+    "• /key &lt;k&gt; - Send a special key or sequence\n"
+    "  <i>Common keys:</i> <code>Escape</code>, <code>Tab</code>, <code>Up</code>, <code>Down</code>, <code>Left</code>, <code>Right</code>, <code>BSpace</code>, <code>Enter</code>\n"
+    "  <i>Combos:</i> <code>C-c</code> (Ctrl+C), <code>C-d</code> (EOF), <code>C-z</code> (Suspend), <code>C-l</code> (Clear)\n"
+    "• /log &lt;n&gt; - View last N lines of terminal history\n\n"
+    "<b>Bot Admin:</b>\n"
+    "• /config - View or update internal settings\n"
+    "• /restart - Hard restart the bot process\n\n"
+    "📖 <i>For interactive examples (nano, vim) see:</i>\n"
+    "https://github.com/youruser/stay-ssh-telegram#interactive-usage-guide"
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -105,7 +111,9 @@ async def send_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         session_name = result.scalar_one_or_none()
         
         if session_name:
-            await tmux_manager.send_raw_key(session_name, key)
+            success, error = await tmux_manager.send_raw_key(session_name, key)
+            if not success:
+                await update.message.reply_text(f"❌ <b>Key Send Failed:</b>\n<code>{error}</code>", parse_mode=constants.ParseMode.HTML)
 
 async def type_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles /type <text>."""
@@ -129,10 +137,12 @@ async def type_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         session_name = result.scalar_one_or_none()
         
         if session_name:
-            await tmux_manager.send_keys(session_name, text, enter=False)
+            success, error = await tmux_manager.send_keys(session_name, text, enter=False)
+            if not success:
+                await update.message.reply_text(f"❌ <b>Type Failed:</b>\n<code>{error}</code>", parse_mode=constants.ParseMode.HTML)
 
 async def list_sessions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handles /sessions."""
+    """Handles /sessions with interactive buttons."""
     if update.effective_user.id != settings.ADMIN_USER_ID: return
     
     names = await tmux_manager.list_sessions()
@@ -140,11 +150,57 @@ async def list_sessions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text("ℹ️ No active tmux sessions found on host.")
         return
     
-    text = "📂 <b>Active Host Sessions:</b>\n"
+    async with async_session_factory() as db:
+        user_repo = UserRepository(db)
+        user_data = await user_repo.get_or_create(update.effective_user.id)
+        active_id = user_data.active_session_id
+        
+        active_name = None
+        if active_id:
+            from sqlalchemy import select
+            from tmux_ssh_telegram.db.models import Session
+            stmt = select(Session.name).where(Session.id == active_id)
+            result = await db.execute(stmt)
+            active_name = result.scalar_one_or_none()
+
+    keyboard = []
     for name in names:
-        text += f"• <code>{name}</code>\n"
+        label = f"⭐ {name}" if name == active_name else name
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"switch:{name}")])
     
-    await update.message.reply_text(text, parse_mode=constants.ParseMode.HTML)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "📂 <b>Active Host Sessions:</b>\nClick a button to switch context.",
+        reply_markup=reply_markup,
+        parse_mode=constants.ParseMode.HTML
+    )
+
+async def session_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles button clicks from /sessions."""
+    query = update.callback_query
+    if query.from_user.id != settings.ADMIN_USER_ID: return
+
+    await query.answer()
+    data = query.data
+    
+    if data.startswith("switch:"):
+        name = data.split(":")[1]
+        async with async_session_factory() as db:
+            session_repo = SessionRepository(db)
+            user_repo = UserRepository(db)
+            session = await session_repo.get_by_name(name)
+            
+            if not session:
+                # If not in DB, create it (sync with host)
+                session = await session_repo.create(name, query.from_user.id)
+            
+            await user_repo.set_active_session(query.from_user.id, session.id)
+            await db.commit()
+        
+        await query.edit_message_text(
+            f"🎯 Switched to session '<code>{name}</code>'.",
+            parse_mode=constants.ParseMode.HTML
+        )
 
 async def create_session(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles /new <name>."""
@@ -246,6 +302,33 @@ async def show_log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
             await update.message.reply_text("❌ Failed to retrieve log.")
 
+async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles /status."""
+    if update.effective_user.id != settings.ADMIN_USER_ID: return
+    
+    async with async_session_factory() as db:
+        user_repo = UserRepository(db)
+        user_data = await user_repo.get_or_create(update.effective_user.id)
+        
+        session_name = "None"
+        if user_data.active_session_id:
+            from sqlalchemy import select
+            from tmux_ssh_telegram.db.models import Session
+            stmt = select(Session.name).where(Session.id == user_data.active_session_id)
+            result = await db.execute(stmt)
+            session_name = result.scalar_one_or_none() or "Unknown"
+
+    connected = await ssh_manager.ensure_connected()
+    conn_status = "✅ Connected" if connected else "❌ Disconnected"
+    
+    await update.message.reply_text(
+        f"📊 <b>StaySSH Status:</b>\n"
+        f"• <b>Connection:</b> {conn_status}\n"
+        f"• <b>Host:</b> <code>{ssh_manager.host}</code>\n"
+        f"• <b>Active Session:</b> <code>{session_name}</code>\n",
+        parse_mode=constants.ParseMode.HTML
+    )
+
 async def manage_config(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles /config [set <key> <value>]."""
     if update.effective_user.id != settings.ADMIN_USER_ID: return
@@ -325,9 +408,9 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text("❌ Selected session not found or inactive.")
             return
 
-        success = await tmux_manager.send_keys(session_name, cmd)
+        success, error = await tmux_manager.send_keys(session_name, cmd)
         if not success:
-            await update.message.reply_text("❌ Failed to send command to host.")
+            await update.message.reply_text(f"❌ <b>Command Failed:</b>\n<code>{error}</code>", parse_mode=constants.ParseMode.HTML)
 
 async def output_monitor_task(application) -> None:
     """Background task to poll tmux output and feed the batcher."""
@@ -408,7 +491,11 @@ def main() -> None:
     application.add_handler(CommandHandler("key", send_key))
     application.add_handler(CommandHandler("type", type_text))
     application.add_handler(CommandHandler("config", manage_config))
+    application.add_handler(CommandHandler("status", show_status))
     application.add_handler(CommandHandler("restart", restart_bot))
+    
+    # Inline Callbacks
+    application.add_handler(CallbackQueryHandler(session_callback))
     
     # Handle unknown commands
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))

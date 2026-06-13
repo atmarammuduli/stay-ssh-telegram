@@ -62,9 +62,51 @@ Ensure you have Docker and Docker Compose installed.
 
 ---
 
-## 📖 Command Reference
+## 📖 Interactive Usage Guide
 
-The bot handles commands and raw text input. Ensure you have an **active session** selected before sending raw commands.
+StaySSH is designed to handle interactive CLI tools. Since Telegram is message-based, follow these patterns:
+
+### 1. Basic Commands
+Send any text as a normal message. The bot appends an `Enter` automatically.
+- *Input*: `ls -la`
+- *Action*: Executes `ls -la` on host.
+
+### 2. The `/type` Command (No Enter)
+Use `/type` when you need to provide input **without** sending a newline. This is essential for:
+- **Passwords**: `/type mysecretpassword` (followed by `/key Enter`)
+- **Partial Commands**: Type half a command, then use `/key Tab` for completion.
+
+### 3. Using `nano` or `vim`
+1.  **Open**: Send `nano myfile.txt`.
+2.  **Navigate**: Use `/key Up`, `/key Down`, etc.
+3.  **Edit**: Send text messages to insert content.
+4.  **Save & Exit (nano)**:
+    -   Send `/key C-o` (Write Out)
+    -   Send `/key Enter` (Confirm filename)
+    -   Send `/key C-x` (Exit)
+5.  **Save & Exit (vim)**:
+    -   Send `/key Escape`
+    -   Send `:wq` (this sends `:wq` + Enter)
+
+### 4. Interactive CLIs (e.g., Gemini CLI)
+If a tool asks a Yes/No question:
+-   Send `y` or `n`.
+-   If it requires a specific key to confirm, use `/key Enter`.
+
+---
+
+## ⌨️ Supported Keys & Combos
+
+The `/key` command supports any standard tmux/X11 key name:
+
+-   **Navigation**: `Up`, `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`
+-   **Editing**: `Tab`, `BSpace` (Backspace), `Delete`, `Enter`, `Escape`, `Space`
+-   **Function Keys**: `F1` through `F12`
+-   **Control Combos**: `C-c` (Interrupt), `C-d` (EOF), `C-z` (Suspend), `C-l` (Clear Screen), `C-a`, `C-b`, etc.
+
+---
+
+## 🛠 Command Reference
 
 ### Session Management
 -   `/new <name>`: Create a new detached tmux session on the host and select it.
@@ -73,17 +115,9 @@ The bot handles commands and raw text input. Ensure you have an **active session
 -   `/kill <name>`: Terminate a tmux session on the host.
 -   `/status`: Show current connection info and the name of the active session.
 
-### Terminal Interaction
--   **`<Any Text>`**: Send text followed by `Enter` (C-m) to the active session.
--   `/type <text>`: Type text raw into the session **without** sending an `Enter` (useful for passwords or partial commands).
--   `/key <key_name>`: Send a special tmux key sequence.
-    -   *Examples*: `/key Escape`, `/key C-c` (Ctrl+C), `/key Up`, `/key Down`, `/key Tab`.
--   `/log <n>`: Capture and display the last `N` lines of history from the active pane (default: 20).
-
 ### Bot Administration
--   `/config`: View current bot settings.
--   `/config set <key> <value>`: Update settings (e.g., `BATCH_INTERVAL_MS`) on the fly.
--   `/restart`: Force the bot container/process to restart.
+-   `/config`: View or update settings (e.g., `BATCH_INTERVAL_MS`).
+-   `/restart`: Force the bot process to restart.
 
 ---
 

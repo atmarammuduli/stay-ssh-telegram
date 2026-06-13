@@ -50,38 +50,42 @@ class TmuxManager:
         
         return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
-    async def create_session(self, name: str) -> bool:
-        """Creates a new detached tmux session."""
+    async def create_session(self, name: str) -> Tuple[bool, str]:
+        """Creates a new detached tmux session. Returns (success, error_message)."""
         result = await self.ssh.run_command(f"tmux new-session -d -s {name}")
         if result.exit_code != 0:
-            logger.error(f"Failed to create tmux session '{name}': {result.stderr}")
-            return False
-        return True
+            err = f"tmux error: {result.stderr or 'Unknown error'}"
+            logger.error(f"Failed to create tmux session '{name}': {err}")
+            return False, err
+        return True, ""
 
-    async def kill_session(self, name: str) -> bool:
-        """Kills a tmux session."""
+    async def kill_session(self, name: str) -> Tuple[bool, str]:
+        """Kills a tmux session. Returns (success, error_message)."""
         result = await self.ssh.run_command(f"tmux kill-session -t {name}")
         if result.exit_code != 0:
-            logger.error(f"Failed to kill tmux session '{name}': {result.stderr}")
-            return False
-        return True
+            err = f"tmux error: {result.stderr or 'Unknown error'}"
+            logger.error(f"Failed to kill tmux session '{name}': {err}")
+            return False, err
+        return True, ""
 
-    async def send_keys(self, name: str, cmd: str, enter: bool = True) -> bool:
-        """Sends a command to a tmux session."""
+    async def send_keys(self, name: str, cmd: str, enter: bool = True) -> Tuple[bool, str]:
+        """Sends a command to a tmux session. Returns (success, error_message)."""
         suffix = " C-m" if enter else ""
         result = await self.ssh.run_command(f"tmux send-keys -t {name} \"{cmd}\"{suffix}")
         if result.exit_code != 0:
-            logger.error(f"Failed to send keys to session '{name}': {result.stderr}")
-            return False
-        return True
+            err = f"tmux error: {result.stderr or 'Unknown error'}"
+            logger.error(f"Failed to send keys to session '{name}': {err}")
+            return False, err
+        return True, ""
 
-    async def send_raw_key(self, name: str, key: str) -> bool:
-        """Sends a raw tmux key sequence (e.g. 'C-c', 'Escape', 'Up')."""
+    async def send_raw_key(self, name: str, key: str) -> Tuple[bool, str]:
+        """Sends a raw tmux key sequence. Returns (success, error_message)."""
         result = await self.ssh.run_command(f"tmux send-keys -t {name} {key}")
         if result.exit_code != 0:
-            logger.error(f"Failed to send raw key '{key}' to session '{name}': {result.stderr}")
-            return False
-        return True
+            err = f"tmux error: {result.stderr or 'Unknown error'}"
+            logger.error(f"Failed to send raw key '{key}' to session '{name}': {err}")
+            return False, err
+        return True, ""
 
     async def capture_pane(self, name: str, start_line: Optional[int] = None) -> Optional[TmuxOutputDTO]:
         """Captures the output of a tmux pane, including history."""
