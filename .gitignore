@@ -1,5 +1,6 @@
 venv/
 *.log
+*.key
 .env**
 .tmux_ssh_telegram.pid
 __pycache__/
