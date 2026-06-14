@@ -12,9 +12,19 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}==========================================${NC}"
 echo -e "${GREEN}   StaySSH Telegram Bot Deployment Utility${NC}"
 echo -e "${BLUE}==========================================${NC}"
-echo -e "Usage: ./deploy.sh"
+echo -e "Usage: ./deploy.sh [OPTIONS]"
+echo -e "Options:"
+echo -e "  --silent    Non-interactive deployment (main branch, hard reset, build, deploy)"
 echo -e "This script helps you fetch latest code, build and deploy the bot."
 echo ""
+
+# Parse arguments
+SILENT_MODE=false
+for arg in "$@"; do
+    if [ "$arg" == "--silent" ]; then
+        SILENT_MODE=true
+    fi
+done
 
 # 0. Check if we are in the right directory
 if [ ! -f "pyproject.toml" ]; then
@@ -36,7 +46,18 @@ fi
 echo -e "${BLUE}ℹ️ Using '$DOCKER_COMPOSE' for deployment.${NC}"
 
 # 1. Ask to fetch latest from git
-read -p "❓ Fetch latest code from git? (y/N): " FETCH_GIT
+if [ "$SILENT_MODE" == "true" ]; then
+    echo -e "${YELLOW}🔄 [SILENT] Fetching, checking out main, and performing hard reset...${NC}"
+    git fetch origin --prune
+    TARGET_BRANCH="main"
+    git checkout $TARGET_BRANCH || git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH
+    git reset --hard origin/$TARGET_BRANCH
+    echo -e "${BLUE}ℹ️ Files in .gitignore (.env, keys/, etc.) were NOT touched.${NC}"
+    FETCH_GIT="n" # Already handled
+else
+    read -p "❓ Fetch latest code from git? (y/N): " FETCH_GIT
+fi
+
 if [[ "$FETCH_GIT" =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}🔄 Fetching remote branches...${NC}"
     git fetch origin --prune
@@ -112,7 +133,12 @@ if [ ! -d "tmux_ssh_telegram" ]; then
 fi
 
 # 4. Ask to build
-read -p "❓ Build the Docker image? (y/N): " BUILD_IMAGE
+if [ "$SILENT_MODE" == "true" ]; then
+    BUILD_IMAGE="y"
+else
+    read -p "❓ Build the Docker image? (y/N): " BUILD_IMAGE
+fi
+
 if [[ "$BUILD_IMAGE" =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}🐳 Building Docker image...${NC}"
     $DOCKER_COMPOSE build --no-cache
@@ -124,7 +150,12 @@ if [[ "$BUILD_IMAGE" =~ ^[Yy]$ ]]; then
 fi
 
 # 5. Ask to deploy
-read -p "❓ Deploy the bot now? (y/N): " DEPLOY_BOT
+if [ "$SILENT_MODE" == "true" ]; then
+    DEPLOY_BOT="y"
+else
+    read -p "❓ Deploy the bot now? (y/N): " DEPLOY_BOT
+fi
+
 if [[ "$DEPLOY_BOT" =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}🚀 Deploying...${NC}"
     $DOCKER_COMPOSE down || true
