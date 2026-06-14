@@ -70,6 +70,7 @@ class AdaptiveBatcher:
 
         # Join all bundles and send
         final_text = "\n\n".join(bundled_messages)
+        logger.info(f"Flushing {len(bundled_messages)} session bundles to Telegram.")
         
         # Respect Telegram limit (approximate, simpler for now)
         if len(final_text) > 4000:

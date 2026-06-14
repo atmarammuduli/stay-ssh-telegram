@@ -21,6 +21,12 @@ class SessionRepository:
         sessions = result.scalars().all()
         return [SessionDTO.model_validate(s) for s in sessions]
 
+    async def get_all(self) -> List[SessionDTO]:
+        stmt = select(Session)
+        result = await self.db.execute(stmt)
+        sessions = result.scalars().all()
+        return [SessionDTO.model_validate(s) for s in sessions]
+
     async def create(self, name: str, creator_id: int, description: Optional[str] = None) -> SessionDTO:
         session = Session(
             name=name,

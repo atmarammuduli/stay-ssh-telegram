@@ -2,6 +2,7 @@ import pytest
 import pytest_asyncio
 import os
 import asyncio
+import time
 from unittest.mock import MagicMock, AsyncMock
 from sqlalchemy import text
 from telegram import Update, Message, User as TGUser, constants
@@ -13,9 +14,9 @@ from tmux_ssh_telegram.db.connection import engine, async_session_factory
 from tmux_ssh_telegram.db.models import Base
 from tmux_ssh_telegram.db.repositories import SessionRepository, UserRepository, SettingRepository
 from tmux_ssh_telegram.core.config import settings
-from tmux_ssh_telegram.bot.main import (
+from tmux_ssh_telegram.bot.handlers import (
     start, list_sessions, create_session, switch_session, 
-    kill_session, show_log, manage_config, handle_command,
+    kill_session, confirm_action, show_log, manage_config, handle_command,
     send_key, type_text
 )
 
@@ -48,6 +49,8 @@ def mock_tg():
     
     mock_context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
     mock_context.args = []
+    mock_context.user_data = {}
+    mock_context.bot_data = {}
     return mock_update, mock_context
 
 @pytest.mark.asyncio
@@ -56,6 +59,10 @@ async def test_complete_bot_flow_e2e(mock_tg):
     mock_update, mock_context = mock_tg
     ssh_manager = SSHManager()
     tmux_manager = TmuxManager(ssh_manager)
+    mock_context.bot_data = {
+        "ssh_manager": ssh_manager,
+        "tmux_manager": tmux_manager
+    }
     
     try:
         connected = await ssh_manager.connect()
@@ -65,7 +72,7 @@ async def test_complete_bot_flow_e2e(mock_tg):
         await start(mock_update, mock_context)
         
         # 2. /new
-        session_name = f"e2e_new_{int(asyncio.get_event_loop().time())}"
+        session_name = f"e2e_new_{int(time.time())}"
         mock_context.args = [session_name]
         await create_session(mock_update, mock_context)
         
@@ -87,9 +94,13 @@ async def test_complete_bot_flow_e2e(mock_tg):
         mock_context.args = ["C-c"]
         await send_key(mock_update, mock_context)
         
-        # 6. /kill
+        # 6. /kill (Request)
         mock_context.args = [session_name]
         await kill_session(mock_update, mock_context)
+        
+        # 7. /y (Confirm)
+        await confirm_action(mock_update, mock_context)
+        await asyncio.sleep(1)
         
         sessions = await tmux_manager.list_sessions()
         assert session_name not in sessions

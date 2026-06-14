@@ -107,7 +107,7 @@ class TestSystemIntegration:
         from telegram import Update, Message, User as TGUser
         from telegram.ext import ContextTypes
         from unittest.mock import MagicMock, AsyncMock
-        from tmux_ssh_telegram.bot.main import create_session, handle_command
+        from tmux_ssh_telegram.bot.handlers import create_session, handle_command
         
         # 1. Setup Mock Update & Context
         mock_update = MagicMock(spec=Update)
@@ -117,6 +117,10 @@ class TestSystemIntegration:
         
         mock_context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
         mock_context.args = ["integ_handler_test"]
+        mock_context.bot_data = {
+            "ssh_manager": self.ssh_manager,
+            "tmux_manager": self.tmux_manager
+        }
         
         # 2. Call handler: create_session
         # This involves TmuxManager.create_session (SSH) and SessionRepo.create (DB)

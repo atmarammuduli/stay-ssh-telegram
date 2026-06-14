@@ -119,3 +119,15 @@ async def test_setting_repo_create_new(mock_db):
     await repo.set_value("k", "v")
     mock_db.add.assert_called_once()
 
+
+@pytest.mark.asyncio
+async def test_session_repo_get_all(mock_db):
+    repo = SessionRepository(mock_db)
+    mock_session = Session(id=1, name="test", status="active", creator_id=123, created_at=datetime.utcnow(), last_activity=datetime.utcnow())
+    
+    mock_result = MagicMock()
+    mock_result.scalars().all.return_value = [mock_session, mock_session]
+    mock_db.execute.return_value = mock_result
+    
+    sessions = await repo.get_all()
+    assert len(sessions) == 2

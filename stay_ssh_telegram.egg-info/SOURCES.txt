@@ -6,6 +6,7 @@ stay_ssh_telegram.egg-info/dependency_links.txt
 stay_ssh_telegram.egg-info/requires.txt
 stay_ssh_telegram.egg-info/top_level.txt
 tests/test_bot_batcher.py
+tests/test_bot_handlers.py
 tests/test_bot_main.py
 tests/test_bot_sync.py
 tests/test_core_config.py
@@ -17,6 +18,7 @@ tests/test_integration_system.py
 tests/test_ssh_manager.py
 tests/test_ssh_tmux.py
 tmux_ssh_telegram/bot/batcher.py
+tmux_ssh_telegram/bot/handlers.py
 tmux_ssh_telegram/bot/main.py
 tmux_ssh_telegram/bot/sync.py
 tmux_ssh_telegram/core/config.py

@@ -1,16 +1,34 @@
 # StaySSH Project Handoff
 
 ## 📌 Project Status
-- **Phase**: Deployment & UI Optimization Complete
-- **Current State**: Core functionality, robust interactive deployment (`deploy.sh`), and polished UI (inline buttons, screenshots, aliases) are all fully implemented and verified on VPS.
-- **Next Steps**: Multi-user support (beyond single admin), automated VPS health monitoring.
+- **Phase**: Functional & Deployment Complete
+- **Current State**: Core bot functionality, robust interactive deployment (`deploy.sh`), UI enhancements (inline buttons, screenshots, aliases), and safety confirmations are fully implemented and verified.
+- **Mandate**: **100% total statement coverage** is mandatory for all core modules.
+- **Coverage Status**: 
+    - **Unit Testing**: achieved **100% Statement Coverage** across all modules (`bot/`, `db/`, `ssh/`, `core/`).
+    - **Aggregation**: Coverage is aggregated across Unit, Integration, and E2E tests using `--cov-append`.
+    - **Verification**: Enforced via a strict coverage gate in `./scripts/run_local.sh --test`. This script MUST fail if any test fails or if total aggregated coverage is less than 100%.
+- **Integration/E2E Tests**: These tests use real credentials from `.env`. Database passwords containing special characters must be URL-encoded (e.g., `$` -> `%24`, `%` -> `%25`).
+
+## 🔄 Iterative Testing & Mitigation Workflow
+To maintain the 100% coverage gate, follow this mandatory iterative process:
+1. **Run**: Execute `./scripts/run_local.sh --test`.
+2. **Inspect**: If it fails, carefully check the console logs for the specific cause (e.g., `InvalidPasswordError`, `InvalidCatalogNameError`, `ImportError`).
+3. **Mitigate**: Apply targeted fixes (e.g., URL-encoding credentials in `.env`, fixing broken imports after refactoring, starting dependencies like PostgreSQL).
+4. **Repeat**: Run the test script again. The task is only complete when the script returns a success code and confirms 100% aggregated coverage.
+
+## 🛠 Refactoring for Testability
+- **Handler Isolation**: All Telegram handlers have been moved from `bot/main.py` to `bot/handlers.py`.
+- **Dependency Injection**: Managers (SSH, Tmux) are now injected via `bot_data`, enabling isolated unit testing of handlers with mocks and removing high-coupling issues that previously blocked 100% coverage.
+
+## ⚠️ Known Gaps & Next Steps
+1. **Integration/E2E Test Environment**: While tests are fully implemented and use real credentials, they require a correctly configured PostgreSQL instance and valid SSH access to pass. Ensure the database user and password in `.env` are accurate and properly escaped.
 
 ## ✨ Key Features Implemented
-- **Interactive Terminal Support**: `/key` and `/type` commands with short aliases (`/ky`, `/t`) for operating apps like `vim`, `nano`, or `gemini-cli`.
-- **UI & Efficiency**: Interactive inline buttons for session management and one/two-letter command aliases for rapid mobile usage.
-- **Terminal Snapshots**: `/screenshot` (`/ss`) command captures full-screen state, preserving footers and status bars.
-- **Robust Deployment**: Interactive `deploy.sh` script with git reset options and absolute immunity for `.env` and key files.
-- **Adaptive Batching**: Efficiently bundles terminal output to avoid Telegram rate limits while maintaining responsiveness.
+- **Interactive Terminal Support**: `/key` and `/type` commands with short aliases (`/ky`, `/t`).
+- **Interactive UI**: Inline session switching buttons, `/screenshot` (`/ss`) for terminal snapshots.
+- **Safety**: `/y` confirmation for `/kill`, `/restart`, and `/config`.
+- **Robust Deployment**: Interactive `deploy.sh` script with git reset options and strict immunity for `.env`/`keys/`.
 
 ## 🧪 Testing & Quality Assurance
 - **Unit Testing**: **100% Statement Coverage** achieved across all modules in the `tmux_ssh_telegram` package.

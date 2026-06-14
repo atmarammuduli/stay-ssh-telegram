@@ -20,12 +20,16 @@ class SyncService:
         """
         logger.info("Synchronizing tmux sessions with host...")
         
-        # 1. Get all sessions from host
-        host_session_names = await self.tmux_manager.list_sessions()
-        
-        # 2. Get all active sessions from DB
-        db_sessions = await self.session_repo.get_active_sessions()
-        db_session_names = {s.name for s in db_sessions}
+        try:
+            # 1. Get all sessions from host
+            host_session_names = await self.tmux_manager.list_sessions()
+        except ConnectionError as e:
+            logger.error(f"Sync aborted: SSH/Tmux connectivity issue: {e}")
+            return # Skip sync, don't mark anything DEAD
+
+        # 2. Get all sessions from DB (regardless of status, to avoid unique constraint)
+        all_db_sessions = await self.session_repo.get_all()
+        db_session_names = {s.name: s for s in all_db_sessions}
 
         # 3. Handle host sessions not in DB (Discovery)
         for name in host_session_names:
@@ -36,10 +40,16 @@ class SyncService:
                     creator_id=admin_id,
                     description="Discovered from host on startup"
                 )
+            else:
+                # If it exists but is marked as DEAD/DELETED, revive it
+                existing = db_session_names[name]
+                if existing.status == SessionStatus.DEAD:
+                    logger.info(f"Reviving existing session: {name}.")
+                    await self.session_repo.update_status(existing.id, SessionStatus.ACTIVE)
 
         # 4. Handle DB sessions not on host (Cleanup/Sync)
-        for db_session in db_sessions:
-            if db_session.name not in host_session_names:
+        for name, db_session in db_session_names.items():
+            if name not in host_session_names and db_session.status == SessionStatus.ACTIVE:
                 logger.warning(f"Session {db_session.name} found in DB but missing on host. Marking as DEAD.")
                 await self.session_repo.update_status(db_session.id, SessionStatus.DEAD)
 

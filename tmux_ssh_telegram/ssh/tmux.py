@@ -45,8 +45,8 @@ class TmuxManager:
         if result.exit_code != 0:
             if "no server running" in result.stderr or "error connecting to server" in result.stderr:
                 return []
-            logger.error(f"Failed to list tmux sessions: {result.stderr}")
-            return []
+            # Connectivity or genuine tmux failure: Raise, don't return empty list
+            raise ConnectionError(f"Failed to list tmux sessions: {result.stderr}")
         
         return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
